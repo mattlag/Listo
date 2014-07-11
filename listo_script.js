@@ -1,15 +1,51 @@
+	/*
+	========================================================
+	Two setup variables for you!
+	========================================================
+	*/
 
-	// ----------------
-	// Global Variables
-	// ----------------
+	/*
+	--------------------------------------------------------
+	Accent Colors
+	This should be a RGB color specified as an object.
+	To switch the accent color, append '?color=orange'
+	to the Listo URL, like:
+	www.you.com/listo/?color=orange
+	--------------------------------------------------------
+	*/
+	var accentcolors = {
+		'red' :		{r:130,g:0,b:10},
+		'orange' :	{r:200,g:100,b:0},
+		'green' :	{r:0,g:100,b:10},
+		'blue' :	{r:0,g:200,b:255},
+		'purple' :	{r:135,g:0,b:119},
+		'gray' :	{r:64,g:64,b:64}
+	};
 
+
+	/*
+	--------------------------------------------------------
+	Lists
+	An array of lists you want to keep.
+	List names should use underscores_between_words
+	--------------------------------------------------------
+	*/
+	var listlist = ['to_do', 'groceries', 'household', 'online'];
+
+
+
+
+
+	/*
+	========================================================
+	Start Product Code
+	========================================================
+	*/
 	var UI = {
-		'listdata' : {"items":[]},
+		'listdata' : {},
 		'currlist' : false,
-		'acccol' : {},
-		'defaultaccentcolor' : 'red',
-		'passcolor' : '',
-		'mobile' : false
+		'accentcolorname' : 'red',
+		'accentmcolor' : {}
 	};
 
 	function log(x) {
@@ -23,59 +59,60 @@
 	// -----------
 
 	$(document).ready(function(){
-		// Mobile Sniffing
-		UI.mobile = navigator.userAgent.search("ZuneWP7") > 0;
-
-
-		// Accent Color
-		UI.acccol = new mColor(accentcolors[UI.defaultaccentcolor]).setLightness(30);
-		UI.passcolor = document.location.href.split('?color=')[1];
-		if(UI.passcolor){
-			UI.passcolor = UI.passcolor.split('?')[0];
-			log("PASSCOLOR = " + UI.passcolor + " accentcolors[UI.passcolor] = " + JSON.stringify(accentcolors[UI.passcolor]));
-			if(accentcolors[UI.passcolor]){
-				UI.acccol = new mColor(accentcolors[UI.passcolor]).setLightness(30);
-			}
+		log('>>> READY \t START');
+		// Set default list data
+		for(var l=0; l<listlist.length; l++){
+			var lname = listlist[l];
+			if(!UI.listdata[lname]) UI.listdata[lname] = {'items':[], 'lastadd':false, 'lastremove':false};
 		}
 
-		$('body').css('background-color', UI.acccol.getString());
+		// Accent Color
+		var readcolor = document.location.href.split('?color=')[1];
+		if(readcolor){
+			readcolor = readcolor.split('?')[0];
+			log("PASSCOLOR = " + readcolor + " accentcolors[readcolor] = " + JSON.stringify(accentcolors[readcolor]));
+			if(accentcolors[readcolor]){
+				UI.accentcolor = readcolor;
+				UI.accentmcolor = new mColor(accentcolors.readcolor).setLightness(30);
+			}
+		} else {
+			UI.accentmcolor = new mColor(accentcolors.red).setLightness(30);
+		}
+
+		$('body').css('background-color', UI.accentmcolor.getString());
 
 
 		// Page Content
-		homePageHTML = gen_HomePageHTML();
-
 		var bk = document.location.href.split('?list=')[1];
 
 		if(listlist.indexOf(bk) > -1){
-			UI.currlist = bk.split('?color=')[0];
-			$('body').html('<div id="wrapper"></div>');
-			setup_ListPage(UI.currlist, true);
+			set_SelectedList(bk.split('?color=')[0]);
+			navTo_ListPage();
 		} else {
-			setup_HomePage();
+			navTo_HomePage();
 		}
 
+		log('>>> READY \t END\n');
 	});
 
-	function setup_HomePage(){
-		UI.currlist = 'listo_home';
+	function navTo_HomePage(){
+		UI.currlist = false;
 		updateURL();
 
-		$('body').html(homePageHTML);
+		add_HomePageHTML();
 		$('#wrapper')
 			.css({left: '-=100%', opacity: 0})
 			.animate({left: 0, opacity: 1},{queue: false, duration: 'fast'});
-		$('h1').css({color: UI.acccol.lighten(0.2).getString()});
+		$('h1').css({color: UI.accentmcolor.lighten(0.2).getString()});
 
-		if(UI.mobile){
-			log("WP7 = true");
-			$('#wrapper').css('overflow-y' , 'scroll');
-		}
+		// if(UI.mobile){
+		//	log("WP7 = true");
+		//	$('#wrapper').css('overflow-y' , 'scroll');
+		// }
 	}
 
-	function setup_ListPage(list){
-		log("setup_ListPage: " + list);
-		UI.currlist = list;
-		list_Sync();
+	function navTo_ListPage(){
+		log("\nnavTo_ListPage \t START");
 		updateURL();
 
 		// this wrapper is the from the landing page - used to be  left: '-=100%'
@@ -91,7 +128,7 @@
 					var that = this;
 					var ani = {opacity:0, width:0};
 					var ct = ti.html().replace(' ', '_').replace('&nbsp;', '_');
-					log('comparing ' + UI.currlist + ' == ' + ct);
+					// log('comparing ' + UI.currlist + ' == ' + ct);
 					if(UI.currlist == ct) { ani = {}; }
 
 					ti.animate(ani, {
@@ -103,46 +140,48 @@
 
 			$.queue(wrap[0], 'fx', function(){
 				$('#wrapper').fadeOut(function(){
-					log('Calling gen_ListPageHTML from the fx queue');
-					gen_ListPageHTML();
-					});
+					log('Calling add_ListPageHTML from the fx queue');
+					add_ListPageHTML();
+				});
 			});
 
 			wrap.dequeue();
 			wrap.dequeue();
 		} else {
-			gen_ListPageHTML();
+			add_ListPageHTML();
 		}
+
+		//list_Refresh();
+		log("navTo_ListPage \t END\n");
 	}
 
 	// ---------------
 	// HTML Generators
 	// ---------------
 
-	function gen_HomePageHTML(){
-		var re = '<div id="wrapper">';
-		var incl = (((100 - UI.acccol.getLightness())*0.4) / (listlist.length + 1));
+	function add_HomePageHTML(){
+		var con = '<div id="wrapper">';
+		var incl = (((100 - UI.accentmcolor.getLightness())*0.4) / (listlist.length + 1));
 
 		$(listlist).each(function(l){
-			var bg = UI.acccol.setLightness(((listlist.length + 1) - l) *incl + UI.acccol.getLightness());
+			var bg = UI.accentmcolor.setLightness(((listlist.length + 1) - l) *incl + UI.accentmcolor.getLightness());
 			var bgcolor = bg.getString();
 			var txcolor = bg.lighten(0.8).getString();
+			var lname = listlist[l];
 
-			re += '<div class="listname" ';
-			re += 'style="background-color:'+bgcolor+'; color:'+txcolor+';" ';
-			re += 'onclick="setup_ListPage(\''+listlist[l]+'\');">';
-			re += listlist[l].replace('_', '&nbsp;');
-			re += '</div>';
+			con += '<div class="listname" ';
+			con += 'style="background-color:'+bgcolor+'; color:'+txcolor+';" ';
+			con += 'onclick="set_SelectedList(\''+lname+'\');">';
+			con += lname.replace('_', '&nbsp;');
+			con += '</div>';
 		});
 
-		re  += '<h1>LISTO!</h1></div>';
+		con  += '<h1>LISTO!</h1></div>';
 
-		return re;
+		$('body').html(con);
 	}
 
-	function gen_ListPageHTML(){
-		log("gen_ListPageHTML");
-
+	function add_ListPageHTML(){
 		var con = "<div id='wrapper'>";
 		con += " <input type='text' id='itemNew'>";
 		con += " <div id='itemGrid'></div>";
@@ -152,6 +191,7 @@
 		con += " </div>";
 		con += "</div>";
 		$('body').html(con);
+		refresh_ListStatusHTML();
 
 		var lcon = $('#wrapper');
 		lcon.css({'left': '100%', opacity: 0});
@@ -160,34 +200,32 @@
 		$('#itemNew').on('keypress', function(event) {
 			if ( event.which == 13 ) {
 				var ni = $('#itemNew');
-				if(ni.val() === '') { list_Sync(); }
+				if(ni.val() === '') { list_PushChange(); }
 				else { list_AddNewItem(ni.val()); }
 			}
 		}).css({
-			color: UI.acccol.getString(),
+			color: UI.accentmcolor.getString(),
 			backgroundColor : "rgb(250,250,250)"
 		});
 
 		$('#homeButton').on('click', function(event) {
-			setup_HomePage();
+			navTo_HomePage();
 		}).css({
-			color: UI.acccol.lighten(0.4).getString(),
-			backgroundColor : UI.acccol.lighten(0.1).getString()
+			color: UI.accentmcolor.lighten(0.4).getString(),
+			backgroundColor : UI.accentmcolor.lighten(0.1).getString()
 		});
 
-		$('#listStatus').css('color', UI.acccol.lighten(0.3).getString());
+		$('#listStatus').css('color', UI.accentmcolor.lighten(0.3).getString());
 
-		if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
-
-		list_Refresh();
+		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
 	}
 
-	function gen_ItemHTML(num, bgc, hideclose) {
+	function make_ItemHTML(num, name, bgc, hideclose) {
 		var txtitem = bgc.lighten(0.8).getString();
 		var bgitem = bgc.getString();
 		var bgclose = bgc.lighten(0.1).getString();
 		var re = '<div id="item'+num+'" class="item" style="background-color:'+bgitem+';">';
-		re += '<span style="color:'+txtitem+';">' + UI.listdata.items[num] + '</span>';
+		re += '<span style="color:'+txtitem+';">' + name + '</span>';
 		if(!hideclose){
 			re += '<span class="removeButton" onclick="list_RemoveItem('+num+');" style="color:'+bgclose+';">&#10006;</span>';
 		}
@@ -196,52 +234,58 @@
 		return re;
 	}
 
+	function refresh_ListStatusHTML(){
+		// List Status
+		var sl = get_SelectedList();
+		var stat =	'<b>' + UI.currlist.replace('_', ' ') + '</b><br>';
+		stat +=		'last remove: ' + timeToEnglish(sl.lastremove);
+		stat +=		'<br>';
+		stat +=		'last add: ' + timeToEnglish(sl.lastadd);
+		//stat +=	'User Agent: ' + navigator.userAgent;
+
+		$('#listStatus').html(stat);
+	}
 
 	// ----------------
 	// List Functions
 	// ----------------
 
 	function list_Refresh(){
-		log("list_Refresh");
-
-		// List Status
-		var stat =	'<b>' + UI.currlist.replace('_', ' ') + '</b><br>';
-		stat +=		'last remove: ' + timeToEnglish(UI.listdata.lastremove);
-		stat +=		'<br>';
-		stat +=		'last add: ' + timeToEnglish(UI.listdata.lastadd);
-		//stat +=	'User Agent: ' + navigator.userAgent;
-
-		$('#listStatus').html(stat);
+		log("\nlist_Refresh \t START");
+		var sl = get_SelectedList();
 
 		// List Items
 		var con = '';
-		var incl = (((100 - UI.acccol.getLightness())*0.4) / (UI.listdata.items.length + 1));
+		var incl = (((100 - UI.accentmcolor.getLightness())*0.4) / (sl.items.length + 1));
 
-		if(UI.listdata.items.length){
-			$(UI.listdata.items).each(function(i) {
-				con = (gen_ItemHTML(i, UI.acccol.setLightness(((i+1)*incl + UI.acccol.getLightness()))) + con);
+		if(sl.items.length){
+			$(sl.items).each(function(i) {
+				con = (make_ItemHTML(i, sl.items[i], UI.accentmcolor.setLightness(((i+1)*incl + UI.accentmcolor.getLightness()))) + con);
 			});
 		} else {
-			con += '<div class="item" style="color:'+UI.acccol.lighten(0.3).getString()+';">';
+			con += '<div class="item" style="color:'+UI.accentmcolor.lighten(0.3).getString()+';">';
 			con += '<i>it\'s empty in here...</i></div>';
 		}
 
 		$('#itemGrid').html(con);
+		refresh_ListStatusHTML();
+
+		log("list_Refresh \t END\n");
 	}
 
 	function list_AddNewItem(item){
 		item = inputSan($.trim(item), true);
+		var sl = get_SelectedList();
 
 		log("ADDNEWITEM - " + item);
 
-		if(typeof UI.listdata.items == 'undefined') { UI.listdata.items = []; }
+		if(typeof sl.items == 'undefined') { sl.items = []; }
 
 		if(item !== ''){
-			UI.listdata.items.push(item);
-			$('#itemGrid').prepend(gen_ItemHTML(UI.listdata.items.length-1, UI.acccol, true));
+			$('#itemGrid').prepend(make_ItemHTML(sl.items.length-1, item, UI.accentmcolor, true));
 			$('#itemGrid .item:first span').css({color:'white'});
-			$('#itemGrid .item:first').css({backgroundColor: UI.acccol.lighten(0.7).getString()}).toggle().slideDown('fast');
-			list_Sync({"itemadd": item});
+			$('#itemGrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.7).getString()}).toggle().slideDown('fast');
+			list_PushChange({"itemadd": item});
 		}
 	}
 
@@ -249,80 +293,90 @@
 		var item = $(('#item'+i));
 
 		item.slideUp('fast', function(){
-			list_Sync({'itemremove': $.trim(inputSan(item.children('*:first').html(), false))});
+			list_PushChange({'itemremove': $.trim(inputSan(item.children('*:first').html(), false))});
 		});
 	}
 
-	function list_Sync(passeddata){
-		log("list_Sync: passed " + JSON.stringify(passeddata));
+	function list_PushChange(updates){
+		updates = updates || {};
 
-		if (typeof passeddata !== 'object') {
-			passeddata = {"":""};
-		}
+		log("list_PushChange: passed " + JSON.stringify(updates));
 
-		passeddata.list = UI.currlist;
 		$('#itemNew').val('').fadeTo('fast', 0.8);
+		var clist = get_SelectedList();
 
-
-		//	=======================
-		//	SAVE DATA
-		//	=======================
-		var returndata = UI.listdata;
-		if(passeddata.itemadd){
-			returndata.items.push(passeddata.itemadd);
-			returndata.lastadd = new Date().toString();
+		if(updates.itemadd){
+			clist.items.push(updates.itemadd);
+			clist.lastadd = new Date().valueOf();
 		}
 
-		if(passeddata.itemremove){
-			var ai = returndata.items.indexOf(passeddata.itemremove);
+		if(updates.itemremove){
+			var ai = clist.items.indexOf(updates.itemremove);
 			if(ai > -1){
-				returndata.items.splice(ai, 1);
-				returndata.lastremove = new Date().toString();
+				clist.items.splice(ai, 1);
+				clist.lastremove = new Date().valueOf();
 			}
 		}
 
 		//	=======================
-		//	RETRIEVE DATA
+		//	SAVE DATA ELSWHERE
 		//	=======================
-
-		if(returndata === ''){
-			UI.listdata = {"items":[]};
-		} else {
-			UI.listdata = returndata;
-		}
 
 		list_Refresh();
 		$('#itemNew').fadeTo('fast', 1.0);
 	}
 
 
+	function get_SelectedList(){
+		log('get_SelectedList: currlist = ' + UI.currlist + ' return = ' + (UI.listdata[UI.currlist]));
+
+		if(UI.currlist){
+			return UI.listdata[UI.currlist];
+		} else {
+			throw "Attempted to access a list while none was selected.";
+		}
+	}
+
+	function set_SelectedList(list){
+		UI.currlist = list;
+		if(get_SelectedList()) UI.listdata[UI.currlist] = {'items':[], 'lastremove':false, 'lastadd':false};
+		navTo_ListPage();
+	}
+
 	// ----------------
 	// Helper Functions
 	// ----------------
 
-
 	function updateURL(){
 		// Color
-		var colu = '';
-		if(UI.passcolor && UI.defaultaccentcolor != UI.passcolor){
-			colu = '?color=' + UI.passcolor;
-		}
+		var p_info = '?';
+		var p_title = 'Listo!';
 
-		var ps = (typeof window.history.pushState == 'function');
 
-		// List
-		if(UI.currlist != 'listo_home'){
-			var nw = UI.currlist.replace(' ', '');
-			if(ps) window.history.pushState('', 'LISTO! ' + UI.currlist, (colu+'?list='+nw));
-			document.title = UI.currlist.replace('_', ' ') + ' LISTO!';
+		if(UI.currlist){
+			// on a list page
+			p_title = (UI.currlist.replace(' ', '') + ' Listo!');
+			if(UI.accentcolorname === 'red'){
+				// default color
+				p_info = ('?list=' + UI.currlist);
+			} else {
+				// custom color
+				p_info = ('?list=' + UI.currlist + '?color=' + UI.accentcolorname);
+			}
 		} else {
-			if(ps) window.history.pushState('', 'LISTO! home', colu+'?list=listo_home');
-			document.title = 'LISTO!';
+			// on the homepage
+			if(UI.accentcolorname !== 'red'){
+				p_info = ('?color=' + UI.accentcolorname);
+			}
 		}
+
+
+		if(typeof window.history.pushState == 'function') window.history.pushState('', p_title, p_info);
+		document.title = p_title;
 	}
 
 	function timeToEnglish(t){
-		if(typeof t == 'undefined') { return 'never'; }
+		if(!t) { return 'never'; }
 
 		var diff = new Date().getTime() - (t*1);
 		var minute = 1000 * 60;
