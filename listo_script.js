@@ -45,7 +45,8 @@
 		'listdata' : {},
 		'currlist' : false,
 		'accentcolorname' : 'red',
-		'accentmcolor' : {}
+		'accentmcolor' : {},
+		'syncstate' : {'variable':false, 'localstorage':false, 'cloudstorage':false}
 	};
 
 	function log(x) {
@@ -60,11 +61,15 @@
 
 	$(document).ready(function(){
 		log('>>> READY \t START');
-		// Set default list data
-		for(var l=0; l<listlist.length; l++){
-			var lname = listlist[l];
-			if(!UI.listdata[lname]) UI.listdata[lname] = {'items':[], 'lastadd':false, 'lastremove':false};
-		}
+
+		// Set default  data
+		var cd = cloudStorage_getData();
+		var ls = localStorage_getData();
+		log('\t Cloud Storage and Local Storage: ' + cd + ' ' + ls);
+		if(cd && cd !== {}){ UI = cd; }
+		else if (ls && ls !== {}) { UI = ls; }
+		else { setupDefaultLists(); }
+
 
 		// Accent Color
 		var readcolor = document.location.href.split('?color=')[1];
@@ -99,7 +104,7 @@
 		UI.currlist = false;
 		updateURL();
 
-		add_HomePageHTML();
+		add_HomePage_HTML();
 		$('#wrapper')
 			.css({left: '-=100%', opacity: 0})
 			.animate({left: 0, opacity: 1},{queue: false, duration: 'fast'});
@@ -141,17 +146,16 @@
 			$.queue(wrap[0], 'fx', function(){
 				$('#wrapper').fadeOut(function(){
 					log('Calling add_ListPageHTML from the fx queue');
-					add_ListPageHTML();
+					add_ListPage_HTML();
 				});
 			});
 
 			wrap.dequeue();
 			wrap.dequeue();
 		} else {
-			add_ListPageHTML();
+			add_ListPage_HTML();
 		}
 
-		//list_Refresh();
 		log("navTo_ListPage \t END\n");
 	}
 
@@ -159,7 +163,7 @@
 	// HTML Generators
 	// ---------------
 
-	function add_HomePageHTML(){
+	function add_HomePage_HTML(){
 		var con = '<div id="wrapper">';
 		var incl = (((100 - UI.accentmcolor.getLightness())*0.4) / (listlist.length + 1));
 
@@ -181,7 +185,7 @@
 		$('body').html(con);
 	}
 
-	function add_ListPageHTML(){
+	function add_ListPage_HTML(){
 		var con = "<div id='wrapper'>";
 		con += " <input type='text' id='itemNew'>";
 		con += " <div id='itemGrid'></div>";
@@ -191,7 +195,7 @@
 		con += " </div>";
 		con += "</div>";
 		$('body').html(con);
-		refresh_ListStatusHTML();
+		refresh_ListStatus_HTML();
 
 		var lcon = $('#wrapper');
 		lcon.css({'left': '100%', opacity: 0});
@@ -220,7 +224,7 @@
 		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
 	}
 
-	function make_ItemHTML(num, name, bgc, hideclose) {
+	function make_Item_HTML(num, name, bgc, hideclose) {
 		var txtitem = bgc.lighten(0.8).getString();
 		var bgitem = bgc.getString();
 		var bgclose = bgc.lighten(0.1).getString();
@@ -234,7 +238,7 @@
 		return re;
 	}
 
-	function refresh_ListStatusHTML(){
+	function refresh_ListStatus_HTML(){
 		// List Status
 		var sl = get_SelectedList();
 		var stat =	'<b>' + UI.currlist.replace('_', ' ') + '</b><br>';
@@ -260,7 +264,7 @@
 
 		if(sl.items.length){
 			$(sl.items).each(function(i) {
-				con = (make_ItemHTML(i, sl.items[i], UI.accentmcolor.setLightness(((i+1)*incl + UI.accentmcolor.getLightness()))) + con);
+				con = (make_Item_HTML(i, sl.items[i], UI.accentmcolor.setLightness(((i+1)*incl + UI.accentmcolor.getLightness()))) + con);
 			});
 		} else {
 			con += '<div class="item" style="color:'+UI.accentmcolor.lighten(0.3).getString()+';">';
@@ -268,21 +272,21 @@
 		}
 
 		$('#itemGrid').html(con);
-		refresh_ListStatusHTML();
+		refresh_ListStatus_HTML();
 
 		log("list_Refresh \t END\n");
 	}
 
 	function list_AddNewItem(item){
 		item = inputSan($.trim(item), true);
+		// log("\nADDNEWITEM - " + item);
+		
 		var sl = get_SelectedList();
-
-		log("ADDNEWITEM - " + item);
 
 		if(typeof sl.items == 'undefined') { sl.items = []; }
 
 		if(item !== ''){
-			$('#itemGrid').prepend(make_ItemHTML(sl.items.length-1, item, UI.accentmcolor, true));
+			$('#itemGrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.accentmcolor, true));
 			$('#itemGrid .item:first span').css({color:'white'});
 			$('#itemGrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.7).getString()}).toggle().slideDown('fast');
 			list_PushChange({"itemadd": item});
@@ -299,6 +303,7 @@
 
 	function list_PushChange(updates){
 		updates = updates || {};
+		var now = new Date().valueOf();
 
 		log("list_PushChange: passed " + JSON.stringify(updates));
 
@@ -307,20 +312,27 @@
 
 		if(updates.itemadd){
 			clist.items.push(updates.itemadd);
-			clist.lastadd = new Date().valueOf();
+			clist.lastadd = now;
+			UI.syncstate.variable = now;
 		}
 
 		if(updates.itemremove){
 			var ai = clist.items.indexOf(updates.itemremove);
 			if(ai > -1){
 				clist.items.splice(ai, 1);
-				clist.lastremove = new Date().valueOf();
+				clist.lastremove = now;
+				UI.syncstate.variable = now;
 			}
 		}
+
 
 		//	=======================
 		//	SAVE DATA ELSWHERE
 		//	=======================
+			localStorage_PushChange();
+		//	cloudStorage_PushChange();
+		//	=======================
+
 
 		list_Refresh();
 		$('#itemNew').fadeTo('fast', 1.0);
@@ -343,6 +355,51 @@
 		navTo_ListPage();
 	}
 
+
+	// ----------------
+	// Other Storage Places
+	// ----------------
+	function localStorage_PushChange(){
+		if(supportsLocalStorage()){
+			UI.syncstate.localstorage = new Date().valueOf();
+			localStorage.setItem('ListoData', JSON.stringify(UI));
+		} else {
+			UI.syncstate.localstorage = false;
+		}
+	}
+
+	function cloudStorage_PushChange() {
+		var success = false;
+		
+		// Save data via AJAX or whatever
+
+		if(success){
+			UI.syncstate.cloudstorage = new Date().valueOf();
+		}
+	}
+
+	function localStorage_getData(){
+		if(supportsLocalStorage()){
+			var ls = localStorage.getItem('ListoData');
+			return JSON.parse(ls);
+		} else {
+			return false;
+		}
+	}
+
+	function cloudStorage_getData(){
+		var clouddata = false;
+
+		// Get data via AJAX or whatever
+
+		if(clouddata){
+			return JSON.parse(clouddata);
+		} else {
+			return false;
+		}
+	}
+
+
 	// ----------------
 	// Helper Functions
 	// ----------------
@@ -351,7 +408,6 @@
 		// Color
 		var p_info = '?';
 		var p_title = 'Listo!';
-
 
 		if(UI.currlist){
 			// on a list page
@@ -383,7 +439,7 @@
 		var hour = minute * 60;
 		var day = hour * 24;
 
-		log("TTE: " + t + " \t diff: " + diff);
+		// log("TTE: " + t + " \t diff: " + diff);
 
 		if (diff < minute) {
 			return 'moments ago';
@@ -423,4 +479,19 @@
 		t = t.replace("‘",  '&apos;');
 		t = t.replace("’",  '&apos;');
 		return t;
+	}
+
+	function setupDefaultLists(){
+		for(var l=0; l<listlist.length; l++){
+			var lname = listlist[l];
+			if(!UI.listdata[lname]) UI.listdata[lname] = {'items':[], 'lastadd':false, 'lastremove':false};
+		}
+	}
+
+	function supportsLocalStorage() {
+		try {
+			return 'localStorage' in window && window.localStorage !== null;
+		} catch (e) {
+			return false;
+		}
 	}
