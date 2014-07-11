@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>LISTO!</title>
+<script>
+	/*
+	========================================================
+	Two setup variables for you!
+	========================================================
+	*/
+	
+	/*
+	--------------------------------------------------------
+	Accent Colors
+	This should be a RGB color specified as an object.
+	To switch the accent color, append '?color=orange' 
+	to the Listo URL, like:
+	www.you.com/listo/?color=orange
+	--------------------------------------------------------
+	*/
+	
+	var accentcolors = {
+		red:	{r:130,g:0,b:10},
+		orange:	{r:200,g:100,b:0},
+		green:	{r:0,g:100,b:10},
+		blue:	{r:0,g:200,b:255},
+		purple:	{r:135,g:0,b:119},
+		gray:	{r:64,g:64,b:64}
+	};
+
+	
+	/*
+	--------------------------------------------------------
+	Lists
+	An array of lists you want to keep.
+	List names should use underscores_between_words
+	--------------------------------------------------------
+	*/
+	
+	var listlist = ['to_do', 'groceries', 'household', 'online'];
+
+</script>
+<script src='jquery-1.11.1.min.js'></script>
+<script src='mColor.js'></script>
+<script src='listo_script.js'></script>  
+<link rel='stylesheet' href='listo_style.css'>
+<meta name='viewport' content='user-scalable=no'>
+</head>
+<body><div id='wrapper'>LISTO!</div></body>
+</html>

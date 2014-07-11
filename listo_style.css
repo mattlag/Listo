@@ -1,0 +1,83 @@
+* {
+	font-family: "Segoe UI", sans-serif;
+	font-size: 1.1em;
+	margin: 0px;
+	padding: 0px;
+}
+
+body {
+	background-color: rgb(200,200,200);
+	overflow-x: hidden;
+}
+
+h1 {
+	font-size:3em;
+	padding: 40px 24px;
+	font-style: italic;
+	font-weight: normal;
+}
+
+.listname {
+	cursor: pointer;
+	font-size: 1.2em;
+	width: 100%;
+	padding: 24px;
+	overflow-x: hidden;
+}
+
+#wrapper {	
+	overflow-x: hidden;
+	/*
+	overflow-y: scroll;
+	*/
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+
+#itemNew, 
+.item {
+	width: 100%;
+	padding: 16px;
+	border: 0px;
+}
+
+#itemGrid {
+	width: 100%;
+}
+
+.item {
+	color: white;
+}
+
+.removeButton {
+	color: #33c;
+	background-color: transparent;
+	border: 0px;
+	margin: 8px 20px;
+	cursor: pointer;
+}
+
+#footer {
+	position: relative;
+	top: 40px;
+	width: 100%;
+	font-size: .8em;
+}
+
+#homeButton {
+	padding: 12px 24px;
+	position: relative;
+	top: 12px;
+	width: 100px;
+	cursor: pointer;
+	border-top-right-radius: 6px;
+	border-bottom-right-radius: 6px;
+}
+
+#listStatus{
+	padding: 24px;
+}
+
