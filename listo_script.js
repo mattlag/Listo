@@ -44,7 +44,8 @@
 	var UI = {
 		'listdata' : {},
 		'currlist' : false,
-		'accentcolorname' : 'red',
+		'defaultaccentcolorname' : 'blue',
+		'accentcolorname' : 'blue',
 		'accentmcolor' : {},
 		'syncstate' : {'variable':false, 'localstorage':false, 'cloudstorage':false}
 	};
@@ -65,23 +66,25 @@
 		// Set default  data
 		var cd = cloudStorage_getData();
 		var ls = localStorage_getData();
-		log('\t Cloud Storage and Local Storage: ' + cd + ' ' + ls);
+		log('\tCloud Storage and Local Storage: ' + cd + ' ' + ls);
 		if(cd && cd !== {}){ UI = cd; }
 		else if (ls && ls !== {}) { UI = ls; }
 		else { setupDefaultLists(); }
 
 
 		// Accent Color
-		var readcolor = document.location.href.split('?color=')[1];
-		if(readcolor){
-			readcolor = readcolor.split('?')[0];
-			log("PASSCOLOR = " + readcolor + " accentcolors[readcolor] = " + JSON.stringify(accentcolors[readcolor]));
-			if(accentcolors[readcolor]){
-				UI.accentcolor = readcolor;
-				UI.accentmcolor = new mColor(accentcolors.readcolor).setLightness(30);
+		var urlcolor = document.location.href.split('?color=')[1];
+		if(urlcolor){
+			urlcolor = urlcolor.split('?')[0];
+			log("\tURL Color = " + urlcolor + " accentcolors[urlcolor] = " + JSON.stringify(accentcolors[urlcolor]));
+			if(accentcolors[urlcolor]){
+				UI.accentcolorname = urlcolor;
+				UI.accentmcolor = new mColor(accentcolors[urlcolor]).setLightness(30);
 			}
 		} else {
-			UI.accentmcolor = new mColor(accentcolors.red).setLightness(30);
+			UI.accentcolorname = UI.defaultaccentcolorname;
+			UI.accentmcolor = new mColor(accentcolors[UI.accentcolorname]).setLightness(30);
+			log('\tDefault Accent Color: ' + UI.accentcolorname);
 		}
 
 		$('body').css('background-color', UI.accentmcolor.getString());
@@ -92,7 +95,6 @@
 
 		if(listlist.indexOf(bk) > -1){
 			set_SelectedList(bk.split('?color=')[0]);
-			navTo_ListPage();
 		} else {
 			navTo_HomePage();
 		}
@@ -123,6 +125,8 @@
 		// this wrapper is the from the landing page - used to be  left: '-=100%'
 		var wrap = $('#wrapper');
 		var wrapchil = wrap.children();
+
+		log('\twrapchil.length ' + wrapchil.length);
 
 		if(wrapchil.length > 0){
 			wrapchil.each(function (i, item) {
@@ -195,7 +199,7 @@
 		con += " </div>";
 		con += "</div>";
 		$('body').html(con);
-		refresh_ListStatus_HTML();
+		list_Refresh();
 
 		var lcon = $('#wrapper');
 		lcon.css({'left': '100%', opacity: 0});
@@ -225,6 +229,7 @@
 	}
 
 	function make_Item_HTML(num, name, bgc, hideclose) {
+		log('make_Item_HTML: name = ' + name);
 		var txtitem = bgc.lighten(0.8).getString();
 		var bgitem = bgc.getString();
 		var bgclose = bgc.lighten(0.1).getString();
@@ -235,19 +240,8 @@
 		}
 		re += '</div>';
 
+		log('make_Item_HTML\t END');
 		return re;
-	}
-
-	function refresh_ListStatus_HTML(){
-		// List Status
-		var sl = get_SelectedList();
-		var stat =	'<b>' + UI.currlist.replace('_', ' ') + '</b><br>';
-		stat +=		'last remove: ' + timeToEnglish(sl.lastremove);
-		stat +=		'<br>';
-		stat +=		'last add: ' + timeToEnglish(sl.lastadd);
-		//stat +=	'User Agent: ' + navigator.userAgent;
-
-		$('#listStatus').html(stat);
 	}
 
 	// ----------------
@@ -258,6 +252,7 @@
 		log("\nlist_Refresh \t START");
 		var sl = get_SelectedList();
 
+		log('\tSelected List Items: ' + JSON.stringify(sl.items));
 		// List Items
 		var con = '';
 		var incl = (((100 - UI.accentmcolor.getLightness())*0.4) / (sl.items.length + 1));
@@ -270,9 +265,15 @@
 			con += '<div class="item" style="color:'+UI.accentmcolor.lighten(0.3).getString()+';">';
 			con += '<i>it\'s empty in here...</i></div>';
 		}
-
 		$('#itemGrid').html(con);
-		refresh_ListStatus_HTML();
+
+		// List Status
+		var stat =	'<b>' + UI.currlist.replace('_', ' ') + '</b><br>';
+		stat +=		'last remove: ' + timeToEnglish(sl.lastremove);
+		stat +=		'<br>';
+		stat +=		'last add: ' + timeToEnglish(sl.lastadd);
+		//stat +=	'User Agent: ' + navigator.userAgent;
+		$('#listStatus').html(stat);
 
 		log("list_Refresh \t END\n");
 	}
@@ -340,7 +341,8 @@
 
 
 	function get_SelectedList(){
-		log('get_SelectedList: currlist = ' + UI.currlist + ' return = ' + (UI.listdata[UI.currlist]));
+		log('get_SelectedList \t START');
+		log('\tcurrlist = ' + UI.currlist + ' return = ' + JSON.stringify(UI.listdata[UI.currlist]));
 
 		if(UI.currlist){
 			return UI.listdata[UI.currlist];
@@ -351,7 +353,7 @@
 
 	function set_SelectedList(list){
 		UI.currlist = list;
-		if(get_SelectedList()) UI.listdata[UI.currlist] = {'items':[], 'lastremove':false, 'lastadd':false};
+		if(!UI.listdata[list]) UI.listdata[list] = {'items':[], 'lastremove':false, 'lastadd':false};
 		navTo_ListPage();
 	}
 
@@ -379,8 +381,10 @@
 	}
 
 	function localStorage_getData(){
+		log('localStorage_getData:\t START');
 		if(supportsLocalStorage()){
 			var ls = localStorage.getItem('ListoData');
+			log('\treturning: ' + JSON.parse(ls));
 			return JSON.parse(ls);
 		} else {
 			return false;
@@ -405,6 +409,7 @@
 	// ----------------
 
 	function updateURL(){
+		// log('updateURL\t START');
 		// Color
 		var p_info = '?';
 		var p_title = 'Listo!';
@@ -412,7 +417,7 @@
 		if(UI.currlist){
 			// on a list page
 			p_title = (UI.currlist.replace(' ', '') + ' Listo!');
-			if(UI.accentcolorname === 'red'){
+			if(UI.accentcolorname === UI.defaultaccentcolorname){
 				// default color
 				p_info = ('?list=' + UI.currlist);
 			} else {
@@ -421,7 +426,7 @@
 			}
 		} else {
 			// on the homepage
-			if(UI.accentcolorname !== 'red'){
+			if(UI.accentcolorname !== UI.defaultaccentcolorname){
 				p_info = ('?color=' + UI.accentcolorname);
 			}
 		}
@@ -429,6 +434,7 @@
 
 		if(typeof window.history.pushState == 'function') window.history.pushState('', p_title, p_info);
 		document.title = p_title;
+		// log('updateURL\t END');
 	}
 
 	function timeToEnglish(t){
@@ -490,7 +496,9 @@
 
 	function supportsLocalStorage() {
 		try {
-			return 'localStorage' in window && window.localStorage !== null;
+			var re = ('localStorage' in window && window.localStorage !== null);
+			log('supportsLocalStorage: ' + re);
+			return re;
 		} catch (e) {
 			return false;
 		}
