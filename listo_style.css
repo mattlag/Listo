@@ -60,6 +60,14 @@ h1 {
 	cursor: pointer;
 }
 
+.themechooserbutton {
+	padding: 4px 8px;
+	width:100px;
+	border-radius: 3px;
+	border:0px;
+	font-size: .6em;
+}
+
 #footer {
 	position: relative;
 	top: 40px;

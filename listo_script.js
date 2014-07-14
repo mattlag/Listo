@@ -14,12 +14,12 @@
 	--------------------------------------------------------
 	*/
 	var accentcolors = {
-		'red' :		{r:130,g:0,b:10},
-		'orange' :	{r:200,g:100,b:0},
-		'green' :	{r:0,g:100,b:10},
-		'blue' :	{r:0,g:200,b:255},
-		'purple' :	{r:135,g:0,b:119},
-		'gray' :	{r:64,g:64,b:64}
+		'red' :		{'r':130,'g':0,'b':10},
+		'orange' :	{'r':200,'g':100,'b':0},
+		'green' :	{'r':0,'g':100,'b':10},
+		'blue' :	{'r':0,'g':200,'b':255},
+		'purple' :	{'r':135,'g':0,'b':119},
+		'gray' :	{'r':64,'g':64,'b':64}
 	};
 
 
@@ -184,7 +184,9 @@
 			con += '</div>';
 		});
 
-		con  += '<h1>LISTO!</h1></div>';
+		con += '<h1>LISTO!</h1>';
+		con += '<div id="listStatus">'+make_ThemeChooser_HTML()+'</div>';
+		con += '</div>';
 
 		$('body').html(con);
 	}
@@ -244,6 +246,35 @@
 		return re;
 	}
 
+	function make_ThemeChooser_HTML() {
+		var re = '<div id="themechoices">';
+		re += make_ThemeChooser_Button(UI.accentcolorname);
+
+		for(var c in accentcolors){
+			if(accentcolors.hasOwnProperty(c)){
+				if(c !== UI.accentcolorname){
+					re += make_ThemeChooser_Button(c);
+				}
+			}
+		}
+
+		re += '</div>';
+		return re;		
+	}
+
+	function make_ThemeChooser_Button(name) {
+		var mc = new mColor(accentcolors[name]);
+		var bgcolor = mc.lighten(0.05).getString();
+		var txtcolor = mc.lighten(0.3).getString();
+		var re = '<button class="themechooserbutton" ';
+		re += 'style="background-color:'+bgcolor+'; color:'+txtcolor+';" ';
+		re += 'onclick="selectTheme(\''+name+'\');" ';
+		re += '>';
+		re += name + '</button><br>';
+
+		return re;
+	}
+
 	// ----------------
 	// List Functions
 	// ----------------
@@ -269,9 +300,11 @@
 
 		// List Status
 		var stat =	'<b>' + UI.currlist.replace('_', ' ') + '</b><br>';
-		stat +=		'last remove: ' + timeToEnglish(sl.lastremove);
-		stat +=		'<br>';
-		stat +=		'last add: ' + timeToEnglish(sl.lastadd);
+		stat +=	'last remove: ' + timeToEnglish(sl.lastremove);
+		stat +=	'<br>';
+		stat +=	'last add: ' + timeToEnglish(sl.lastadd);
+		stat +=	'<br>';
+		stat += make_ThemeChooser_HTML();
 		//stat +=	'User Agent: ' + navigator.userAgent;
 		$('#listStatus').html(stat);
 
@@ -281,7 +314,7 @@
 	function list_AddNewItem(item){
 		item = inputSan($.trim(item), true);
 		// log("\nADDNEWITEM - " + item);
-		
+
 		var sl = get_SelectedList();
 
 		if(typeof sl.items == 'undefined') { sl.items = []; }
@@ -372,7 +405,7 @@
 
 	function cloudStorage_PushChange() {
 		var success = false;
-		
+
 		// Save data via AJAX or whatever
 
 		if(success){
