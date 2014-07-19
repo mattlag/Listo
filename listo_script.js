@@ -184,22 +184,21 @@
 			con += '</div>';
 		});
 
-		con += '<h1>LISTO!</h1>';
-		con += '<div id="listStatus">'+make_ThemeChooser_HTML()+'</div>';
+		con += make_Footer_HTML();
 		con += '</div>';
 
 		$('body').html(con);
+
+		$('#syncStatus').css('color', UI.accentmcolor.lighten(0.3).getString());
 	}
 
 	function add_ListPage_HTML(){
 		var con = "<div id='wrapper'>";
-		con += " <input type='text' id='itemNew'>";
-		con += " <div id='itemGrid'></div>";
-		con += " <div id='footer'>";
-		con += "  <div id='homeButton'>&lsaquo; home &nbsp;</div>";
-		con += "  <div id='listStatus'></div>";
-		con += " </div>";
+		con += "<input type='text' id='itemNew'>";
+		con += "<div id='itemGrid'></div>";
+		con += make_Footer_HTML();
 		con += "</div>";
+
 		$('body').html(con);
 		list_Refresh();
 
@@ -225,7 +224,7 @@
 			backgroundColor : UI.accentmcolor.lighten(0.1).getString()
 		});
 
-		$('#listStatus').css('color', UI.accentmcolor.lighten(0.3).getString());
+		$('#listStatus').add('#syncStatus').css('color', UI.accentmcolor.lighten(0.3).getString());
 
 		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
 	}
@@ -246,9 +245,23 @@
 		return re;
 	}
 
+	function make_Footer_HTML() {
+		var con = "<div id='footer'>";
+		//if(UI.currlist)	con += "<div id='homeButton'>&lsaquo; home &nbsp;</div>";
+		if(UI.currlist)	con += "<div id='homeButton'>&#x276E; home &nbsp;</div>";
+		else con += '<h1>LISTO!</h1>';
+		con += "<div id='listStatus'></div>";
+		con += "<div id='syncStatus'>"+make_SyncStatus_HTML()+"</div>";
+		con += "<div id='themeStatus'>"+make_ThemeChooser_HTML()+"</div>";
+		con += "</div>";
+
+		return con;
+	}
+
 	function make_ThemeChooser_HTML() {
-		var re = '<div id="themechoices">';
+		var re = '';
 		re += make_ThemeChooser_Button(UI.accentcolorname);
+		re += '<div id="themechoices">';
 
 		for(var c in accentcolors){
 			if(accentcolors.hasOwnProperty(c)){
@@ -263,18 +276,42 @@
 	}
 
 	function make_ThemeChooser_Button(name) {
-		var mc = new mColor(accentcolors[name]);
+		var mc = new mColor(accentcolors[name]).setLightness(30);
 		var bgcolor = mc.lighten(0.05).getString();
 		var txtcolor = mc.lighten(0.3).getString();
 		var re = '<button class="themechooserbutton" ';
 		re += 'style="background-color:'+bgcolor+'; color:'+txtcolor+';" ';
 		re += 'onclick="selectTheme(\''+name+'\');" ';
 		re += '>';
-		re += name + '</button><br>';
+		re += name;
+		if(UI.accentcolorname === name) re += ' theme';
+		re += '</button>';
 
 		return re;
 	}
 
+	function selectTheme(newtheme){
+		if(UI.accentcolorname === newtheme){
+			$('#themechoices').toggle();
+		} else {
+			UI.accentcolorname = newtheme;
+			updateURL();
+			location.reload();
+		}
+	}
+
+	function make_SyncStatus_HTML() {
+		/*
+			Filled Hexagon &#x2B22;
+			Empty Hexagon &#x2B21;
+		*/
+		var re = '';
+
+		re += '&#x2B22; local storage';
+		re += '<br>';
+		re += '&#x2B22; cloud storage';
+		return re;
+	}
 	// ----------------
 	// List Functions
 	// ----------------
@@ -303,8 +340,6 @@
 		stat +=	'last remove: ' + timeToEnglish(sl.lastremove);
 		stat +=	'<br>';
 		stat +=	'last add: ' + timeToEnglish(sl.lastadd);
-		stat +=	'<br>';
-		stat += make_ThemeChooser_HTML();
 		//stat +=	'User Agent: ' + navigator.userAgent;
 		$('#listStatus').html(stat);
 
