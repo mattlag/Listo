@@ -47,7 +47,8 @@
 		'defaultaccentcolorname' : 'blue',
 		'accentcolorname' : 'blue',
 		'accentmcolor' : {},
-		'syncstate' : {'variable':false, 'localstorage':false, 'cloudstorage':false}
+		'syncstate' : {'variable':false, 'localstorage':false, 'cloudstorage':false},
+		'unsync' : []
 	};
 
 	function log(x) {
@@ -67,9 +68,21 @@
 		var cd = cloudStorage_getData();
 		var ls = localStorage_getData();
 		log('\tCloud Storage and Local Storage: ' + cd + ' ' + ls);
-		if(cd && cd !== {}){ UI = cd; }
-		else if (ls && ls !== {}) { UI = ls; }
-		else { setupDefaultLists(); }
+		
+		if(cd && cd !== {}){ 
+			// First, check Cloud Storage
+			UI = cd;
+			if(ls && ls.accentcolorname && ls.accentcolorname !== UI.defaultaccentcolorname){
+				// But, respect local theme choice if there is one
+				UI.accentcolorname = ls.accentcolorname;
+			}
+		} else if (ls && ls !== {}) {
+			// If no Cloud Storage, fallback to Local Storage
+			UI = ls;
+		} else {
+			// Nothing saved, default to empty lists
+			setupDefaultLists();
+		}
 
 
 		// Accent Color
@@ -127,11 +140,11 @@
 		// var wrapchil = wrap.children();
 		var wrapchil = $('.listname');
 
-		log('\twrapchil.length ' + wrapchil.length);
+		// log('\twrapchil.length ' + wrapchil.length);
 
 		if(wrapchil.length > 0){
 			wrapchil.each(function (i, item) {
-				log('wrapchil each: ' + i);
+				// log('wrapchil each: ' + i);
 				var ti = $(item);
 
 				// Add animations on each item to the fx queue on the navigation DOM element
@@ -139,7 +152,7 @@
 					var that = this;
 					var ani = {opacity:0, width:0};
 					var ct = ti.html().split('<')[0].replace(' ', '_').replace('&nbsp;', '_');
-					log('comparing ' + UI.currlist + ' == ' + ct);
+					// log('comparing ' + UI.currlist + ' == ' + ct);
 					if(UI.currlist == ct) { ani = {}; }
 
 					ti.animate(ani, {
@@ -154,7 +167,7 @@
 
 			$.queue(wrap[0], 'fx', function(){
 				$('#wrapper').fadeOut(function(){
-					log('Calling add_ListPageHTML from the fx queue');
+					// log('Calling add_ListPageHTML from the fx queue');
 					add_ListPage_HTML();
 				});
 			});
@@ -313,11 +326,13 @@
 			Filled Hexagon &#x2B22;
 			Empty Hexagon &#x2B21;
 		*/
+		var cs = UI.syncstate.cloudstorage ? '&#x2B22;' : '&#x2B21;';
+		var ls = (UI.syncstate.localstorage || supportsLocalStorage()) ? '&#x2B22;' : '&#x2B21;';
 		var re = '';
 
-		re += '<span style="width:16px; display:inline-block;">&#x2B22;</span>local storage';
+		re += '<span style="width:16px; display:inline-block;">'+ls+'</span>local storage';
 		re += '<br>';
-		re += '<span style="width:16px; display:inline-block;">&#x2B22;</span>cloud storage';
+		re += '<span style="width:16px; display:inline-block;">'+cs+'</span>cloud storage';
 		return re;
 	}
 	// ----------------
@@ -407,9 +422,16 @@
 		//	SAVE DATA ELSWHERE
 		//	=======================
 			localStorage_PushChange();
-		//	cloudStorage_PushChange();
+			cloudStorage_PushChange();
 		//	=======================
 
+		if(!UI.syncstate.cloudstorage){
+			// Failed to sync to the cloud, try to save locally for later
+			UI.unsync.push(updates);
+			if(supportsLocalStorage()){
+				localStorage.setItem('Listo_Unsync', JSON.stringify(UI.unsync));
+			}
+		}
 
 		list_Refresh();
 		$('#itemNew').fadeTo('fast', 1.0);
@@ -440,7 +462,7 @@
 	function localStorage_PushChange(){
 		if(supportsLocalStorage()){
 			UI.syncstate.localstorage = new Date().valueOf();
-			localStorage.setItem('ListoData', JSON.stringify(UI));
+			localStorage.setItem('Listo_Data', JSON.stringify(UI));
 		} else {
 			UI.syncstate.localstorage = false;
 		}
@@ -453,13 +475,15 @@
 
 		if(success){
 			UI.syncstate.cloudstorage = new Date().valueOf();
+		} else {
+			UI.syncstate.cloudstorage = false;
 		}
 	}
 
 	function localStorage_getData(){
 		log('localStorage_getData:\t START');
 		if(supportsLocalStorage()){
-			var ls = localStorage.getItem('ListoData');
+			var ls = localStorage.getItem('Listo_Data');
 			log('\treturning: ' + JSON.parse(ls));
 			return JSON.parse(ls);
 		} else {
