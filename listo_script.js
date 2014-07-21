@@ -64,26 +64,7 @@
 	$(document).ready(function(){
 		log('>>> READY \t START');
 
-		// Set default  data
-		var cd = cloudStorage_getData();
-		var ls = localStorage_getData();
-		log('\tCloud Storage and Local Storage: ' + cd + ' ' + ls);
-		
-		if(cd && cd !== {}){ 
-			// First, check Cloud Storage
-			UI = cd;
-			if(ls && ls.accentcolorname && ls.accentcolorname !== UI.defaultaccentcolorname){
-				// But, respect local theme choice if there is one
-				UI.accentcolorname = ls.accentcolorname;
-			}
-		} else if (ls && ls !== {}) {
-			// If no Cloud Storage, fallback to Local Storage
-			UI = ls;
-		} else {
-			// Nothing saved, default to empty lists
-			setupDefaultLists();
-		}
-
+		data_Refresh();
 
 		// Accent Color
 		var urlcolor = document.location.href.split('?color=')[1];
@@ -156,17 +137,17 @@
 					if(UI.currlist == ct) { ani = {}; }
 
 					ti.animate(ani, {
-						complete: function(){ 
+						complete: function(){
 							$.dequeue(that);
 							if(i === wrapchil.length-1) $.dequeue(that);
 						},
-						duration: 100,
+						duration: 60,
 					});
 				});
 			});
 
 			$.queue(wrap[0], 'fx', function(){
-				$('#wrapper').fadeOut(function(){
+				$('#wrapper').fadeOut(60, function(){
 					// log('Calling add_ListPageHTML from the fx queue');
 					add_ListPage_HTML();
 				});
@@ -181,9 +162,18 @@
 		log("navTo_ListPage \t END\n");
 	}
 
-	// ---------------
-	// HTML Generators
-	// ---------------
+
+
+
+
+
+
+
+
+
+	// --------------------------------
+	// HOME and COMMON HTML Generators
+	// --------------------------------
 
 	function add_HomePage_HTML(){
 		var con = '<div id="wrapper">';
@@ -213,59 +203,6 @@
 		$('#syncStatus').css('color', UI.accentmcolor.lighten(0.3).getString());
 	}
 
-	function add_ListPage_HTML(){
-		var con = "<div id='wrapper'>";
-		con += "<input type='text' id='itemNew'>";
-		con += "<div id='itemGrid'></div>";
-		con += make_Footer_HTML();
-		con += "</div>";
-
-		$('body').html(con);
-		list_Refresh();
-
-		var lcon = $('#wrapper');
-		lcon.css({'left': '100%', opacity: 0});
-		lcon.animate({'left': 0, opacity: 1},{duration: 'fast'});
-
-		$('#itemNew').on('keypress', function(event) {
-			if ( event.which == 13 ) {
-				var ni = $('#itemNew');
-				if(ni.val() === '') { list_PushChange(); }
-				else { list_AddNewItem(ni.val()); }
-			}
-		}).css({
-			color: UI.accentmcolor.getString(),
-			backgroundColor : "rgb(250,250,250)"
-		});
-
-		$('#homeButton').on('click', function(event) {
-			navTo_HomePage();
-		}).css({
-			color: UI.accentmcolor.lighten(0.4).getString(),
-			backgroundColor : UI.accentmcolor.lighten(0.1).getString()
-		});
-
-		$('#listStatus').add('#syncStatus').css('color', UI.accentmcolor.lighten(0.3).getString());
-
-		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
-	}
-
-	function make_Item_HTML(num, name, bgc, hideclose) {
-		log('make_Item_HTML: name = ' + name);
-		var txtitem = bgc.lighten(0.8).getString();
-		var bgitem = bgc.getString();
-		var bgclose = bgc.lighten(0.1).getString();
-		var re = '<div id="item'+num+'" class="item" style="background-color:'+bgitem+';">';
-		re += '<span style="color:'+txtitem+';">' + name + '</span>';
-		if(!hideclose){
-			re += '<span class="removeButton" onclick="list_RemoveItem('+num+');" style="color:'+bgclose+';">&#10006;</span>';
-		}
-		re += '</div>';
-
-		log('make_Item_HTML\t END');
-		return re;
-	}
-
 	function make_Footer_HTML() {
 		var con = "<div id='footer'>";
 		//if(UI.currlist)	con += "<div id='homeButton'>&lsaquo; home &nbsp;</div>";
@@ -293,7 +230,7 @@
 		}
 
 		re += '</div>';
-		return re;		
+		return re;
 	}
 
 	function make_ThemeChooser_Button(name) {
@@ -335,12 +272,59 @@
 		re += '<span style="width:16px; display:inline-block;">'+cs+'</span>cloud storage';
 		return re;
 	}
-	// ----------------
-	// List Functions
-	// ----------------
 
-	function list_Refresh(){
-		log("\nlist_Refresh \t START");
+
+
+
+
+
+
+
+
+
+	// --------------------------------
+	// LIST HTML Generators
+	// --------------------------------
+
+	function add_ListPage_HTML(){
+		var con = "<div id='wrapper'>";
+		con += "<input type='text' id='itemNew'>";
+		con += "<div id='itemGrid'></div>";
+		con += make_Footer_HTML();
+		con += "</div>";
+
+		$('body').html(con);
+		add_List_HTML();
+
+		var lcon = $('#wrapper');
+		lcon.css({'left': '100%', opacity: 0});
+		lcon.animate({'left': 0, opacity: 1},{duration: 'fast'});
+
+		$('#itemNew').on('keypress', function(event) {
+			if ( event.which == 13 ) {
+				var ni = $('#itemNew');
+				if(ni.val() === '') { data_PushChange(); }
+				else { list_AddNewItem(ni.val()); }
+			}
+		}).css({
+			color: UI.accentmcolor.getString(),
+			backgroundColor : "rgb(250,250,250)"
+		});
+
+		$('#homeButton').on('click', function(event) {
+			navTo_HomePage();
+		}).css({
+			color: UI.accentmcolor.lighten(0.4).getString(),
+			backgroundColor : UI.accentmcolor.lighten(0.1).getString()
+		});
+
+		$('#listStatus').add('#syncStatus').css('color', UI.accentmcolor.lighten(0.3).getString());
+
+		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
+	}
+
+	function add_List_HTML(){
+		log("\nadd_List_HTML \t START");
 		var sl = get_SelectedList();
 
 		log('\tSelected List Items: ' + JSON.stringify(sl.items));
@@ -366,7 +350,7 @@
 		//stat +=	'User Agent: ' + navigator.userAgent;
 		$('#listStatus').html(stat);
 
-		log("list_Refresh \t END\n");
+		log("add_List_HTML \t END\n");
 	}
 
 	function list_AddNewItem(item){
@@ -381,7 +365,7 @@
 			$('#itemGrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.accentmcolor, true));
 			$('#itemGrid .item:first span').css({color:'white'});
 			$('#itemGrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.7).getString()}).toggle().slideDown('fast');
-			list_PushChange({"itemadd": item});
+			data_PushChange({"itemadd": item});
 		}
 	}
 
@@ -389,30 +373,96 @@
 		var item = $(('#item'+i));
 
 		item.slideUp('fast', function(){
-			list_PushChange({'itemremove': $.trim(inputSan(item.children('*:first').html(), false))});
+			data_PushChange({'itemremove': $.trim(inputSan(item.children('*:first').html(), false))});
 		});
 	}
+	
+	function make_Item_HTML(num, name, bgc, hideclose) {
+		log('make_Item_HTML: name = ' + name);
+		var txtitem = bgc.lighten(0.8).getString();
+		var bgitem = bgc.getString();
+		var bgclose = bgc.lighten(0.1).getString();
+		var re = '<div id="item'+num+'" class="item" style="background-color:'+bgitem+';">';
+		re += '<span style="color:'+txtitem+';">' + name + '</span>';
+		if(!hideclose){
+			re += '<span class="removeButton" onclick="list_RemoveItem('+num+');" style="color:'+bgclose+';">&#10006;</span>';
+		}
+		re += '</div>';
 
-	function list_PushChange(updates){
+		log('make_Item_HTML\t END');
+		return re;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// ----------------
+	// Data Functions
+	// ----------------
+
+	function data_Refresh() {
+		// Set default  data
+		var got_clouddata = cloudStorage_getData();
+		var got_localdata = localStorage_getData();
+		log('\tCloud Storage and Local Storage: ' + got_clouddata + ' ' + got_localdata);
+
+		/*
+		If bad Cloud Sync Status, attempt to merge
+		*/
+
+
+
+		/*
+		Now that everything is as good as can be, load appropriate data
+		*/
+
+		if(got_clouddata && got_clouddata !== {}){
+			// First, check Cloud Storage
+			UI = got_clouddata;
+			if(got_localdata && got_localdata.accentcolorname && got_localdata.accentcolorname !== UI.defaultaccentcolorname){
+				// But, respect local theme choice if there is one
+				UI.accentcolorname = got_localdata.accentcolorname;
+			}
+		} else if (got_localdata && got_localdata !== {}) {
+			// If no Cloud Storage, fallback to Local Storage
+			UI = got_localdata;
+		} else {
+			// Nothing saved, default to empty lists
+			setupDefaultLists();
+		}
+	}
+
+	function data_PushChange(updates, list){
+		list = list || get_SelectedList();
 		updates = updates || {};
 		var now = new Date().valueOf();
 
-		log("list_PushChange: passed " + JSON.stringify(updates));
+		log("data_PushChange: passed " + JSON.stringify(updates));
 
 		$('#itemNew').val('').fadeTo('fast', 0.8);
-		var clist = get_SelectedList();
 
 		if(updates.itemadd){
-			clist.items.push(updates.itemadd);
-			clist.lastadd = now;
+			list.items.push(updates.itemadd);
+			list.lastadd = now;
 			UI.syncstate.variable = now;
 		}
 
 		if(updates.itemremove){
-			var ai = clist.items.indexOf(updates.itemremove);
+			var ai = list.items.indexOf(updates.itemremove);
 			if(ai > -1){
-				clist.items.splice(ai, 1);
-				clist.lastremove = now;
+				list.items.splice(ai, 1);
+				list.lastremove = now;
 				UI.syncstate.variable = now;
 			}
 		}
@@ -427,13 +477,13 @@
 
 		if(!UI.syncstate.cloudstorage){
 			// Failed to sync to the cloud, try to save locally for later
-			UI.unsync.push(updates);
+			UI.unsync.push({list: updates});
 			if(supportsLocalStorage()){
-				localStorage.setItem('Listo_Unsync', JSON.stringify(UI.unsync));
+				localStorage.setItem('Listo_Data', JSON.stringify(UI));
 			}
 		}
 
-		list_Refresh();
+		add_List_HTML();
 		$('#itemNew').fadeTo('fast', 1.0);
 	}
 
@@ -455,10 +505,6 @@
 		navTo_ListPage();
 	}
 
-
-	// ----------------
-	// Other Storage Places
-	// ----------------
 	function localStorage_PushChange(){
 		if(supportsLocalStorage()){
 			UI.syncstate.localstorage = new Date().valueOf();
@@ -502,6 +548,17 @@
 			return false;
 		}
 	}
+
+
+
+
+
+
+
+
+
+
+
 
 
 	// ----------------
