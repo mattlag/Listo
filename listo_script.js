@@ -124,24 +124,29 @@
 
 		// this wrapper is the from the landing page - used to be  left: '-=100%'
 		var wrap = $('#wrapper');
-		var wrapchil = wrap.children();
+		// var wrapchil = wrap.children();
+		var wrapchil = $('.listname');
 
 		log('\twrapchil.length ' + wrapchil.length);
 
 		if(wrapchil.length > 0){
 			wrapchil.each(function (i, item) {
+				log('wrapchil each: ' + i);
 				var ti = $(item);
 
 				// Add animations on each item to the fx queue on the navigation DOM element
 				$.queue(wrap[0], 'fx', function () {
 					var that = this;
 					var ani = {opacity:0, width:0};
-					var ct = ti.html().replace(' ', '_').replace('&nbsp;', '_');
-					// log('comparing ' + UI.currlist + ' == ' + ct);
+					var ct = ti.html().split('<')[0].replace(' ', '_').replace('&nbsp;', '_');
+					log('comparing ' + UI.currlist + ' == ' + ct);
 					if(UI.currlist == ct) { ani = {}; }
 
 					ti.animate(ani, {
-						complete: function(){ $.dequeue(that); },
+						complete: function(){ 
+							$.dequeue(that);
+							if(i === wrapchil.length-1) $.dequeue(that);
+						},
 						duration: 100,
 					});
 				});
@@ -155,7 +160,7 @@
 			});
 
 			wrap.dequeue();
-			wrap.dequeue();
+
 		} else {
 			add_ListPage_HTML();
 		}
@@ -175,12 +180,15 @@
 			var bg = UI.accentmcolor.setLightness(((listlist.length + 1) - l) *incl + UI.accentmcolor.getLightness());
 			var bgcolor = bg.getString();
 			var txcolor = bg.lighten(0.8).getString();
+			var countcolor = bg.lighten(0.6).getString();
 			var lname = listlist[l];
+			var itemnum = UI.listdata[lname].items.length;
 
 			con += '<div class="listname" ';
 			con += 'style="background-color:'+bgcolor+'; color:'+txcolor+';" ';
 			con += 'onclick="set_SelectedList(\''+lname+'\');">';
 			con += lname.replace('_', '&nbsp;');
+			if(itemnum) con += '<span class="listcount" style="color:'+countcolor+';">('+itemnum+')</span>';
 			con += '</div>';
 		});
 
@@ -307,9 +315,9 @@
 		*/
 		var re = '';
 
-		re += '&#x2B22; local storage';
+		re += '<span style="width:16px; display:inline-block;">&#x2B22;</span>local storage';
 		re += '<br>';
-		re += '&#x2B22; cloud storage';
+		re += '<span style="width:16px; display:inline-block;">&#x2B22;</span>cloud storage';
 		return re;
 	}
 	// ----------------
