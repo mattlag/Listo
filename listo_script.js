@@ -1,6 +1,6 @@
 	/*
 	========================================================
-	Two setup variables for you!
+	Three setup variables for you!
 	========================================================
 	*/
 
@@ -22,7 +22,6 @@
 		'gray' :	{'r':64,'g':64,'b':64}
 	};
 
-
 	/*
 	--------------------------------------------------------
 	Lists
@@ -32,6 +31,17 @@
 	*/
 	var listlist = ['to_do', 'groceries', 'household', 'online'];
 
+	/*
+	--------------------------------------------------------
+	usecloudstorage
+	Listo! works fine using local HTML5 storage, but if you
+	hook it up to a server, it can persist changes in the
+	cloud.  This requires you to write a .php backend that
+	saves and serves up values via POST.
+	If you don't want to do that, you can turn it off here.
+	--------------------------------------------------------
+	*/
+	var usecloudstorage = true;
 
 
 
@@ -307,8 +317,7 @@
 		$('#itemNew').on('keypress', function(event) {
 			if ( event.which == 13 ) {
 				var ni = $('#itemNew');
-				if(ni.val() === '') { data_Push(); }
-				else { list_AddNewItem(ni.val()); }
+				list_AddNewItem(ni.val());
 			}
 		}).css({
 			color: UI.accentmcolor.getString(),
@@ -371,9 +380,14 @@
 			$('#itemGrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.accentmcolor, true));
 			$('#itemGrid .item:first span').css({color:'white'});
 			$('#itemGrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.7).getString()}).toggle().slideDown('fast');
+
 			data_Push({"itemadd": item});
 			add_List_HTML();
+		} else {
+			data_Get();
 		}
+		
+		$('#itemNew').val('').fadeTo('fast', 0.8);
 	}
 
 	function list_RemoveItem(i){
@@ -382,11 +396,12 @@
 		item.slideUp('fast', function(){
 			data_Push({'itemremove': $.trim(inputSan(item.children('*:first').html(), false))});
 			add_List_HTML();
+			$('#itemNew').val('').fadeTo('fast', 0.8);
 		});
 	}
-	
+
 	function make_Item_HTML(num, name, bgc, hideclose) {
-		log('make_Item_HTML: name = ' + name);
+		// log('make_Item_HTML: name = ' + name);
 		var txtitem = bgc.lighten(0.8).getString();
 		var bgitem = bgc.getString();
 		var bgclose = bgc.lighten(0.1).getString();
@@ -397,13 +412,13 @@
 		}
 		re += '</div>';
 
-		log('make_Item_HTML\t END');
+		// log('make_Item_HTML\t END');
 		return re;
 	}
 
 	function get_SelectedList(){
-		log('get_SelectedList \t START');
-		log('\tcurrlist = ' + UI.currlist + ' return = ' + JSON.stringify(UI.listdata[UI.currlist]));
+		// log('get_SelectedList \t START');
+		// log('\tcurrlist = ' + UI.currlist + ' return = ' + JSON.stringify(UI.listdata[UI.currlist]));
 
 		if(UI.currlist){
 			return UI.listdata[UI.currlist];
@@ -442,19 +457,23 @@
 
 		if(got_clouddata && got_clouddata !== {}){
 			// Cloud connection is good
+			UI = got_clouddata;
 
-			if(got_clouddata && got_localdata.unsync){
-				// Recovering from a bad Cloud Sync Status, attempt to merge			
-
+			var uns = got_localdata.unsync;
+			if(uns){
+				// Recovering from a bad Cloud Sync Status, attempt to merge
+				for(var i=0; i<uns.length; i++){
+					data_Push(uns[i].updates, UI.listdata[uns[i].list]);
+				}
 			}
 
 			// Now that everything is as good as can be, load appropriate data to UI
-			UI = got_clouddata;
 			UI.unsync = [];
 			if(got_localdata && got_localdata.accentcolorname && got_localdata.accentcolorname !== UI.defaultaccentcolorname){
 				// But, respect local theme choice if there is one
 				UI.accentcolorname = got_localdata.accentcolorname;
 			}
+			localStorage_PushChange();
 
 		} else if (got_localdata && got_localdata !== {}) {
 			// If no Cloud Storage, fallback to Local Storage
@@ -477,6 +496,8 @@
 	}
 
 	function cloudStorage_getData(){
+		if(!usecloudstorage) return false;
+
 		var clouddata = false;
 
 		// Get data via AJAX or whatever
@@ -500,8 +521,6 @@
 
 		log("data_Push: passed " + JSON.stringify(updates));
 
-		$('#itemNew').val('').fadeTo('fast', 0.8);
-
 		if(updates.itemadd){
 			list.items.push(updates.itemadd);
 			list.lastadd = now;
@@ -518,18 +537,19 @@
 		}
 
 
-		//	=======================
-		//	SAVE DATA ELSWHERE
-		//	=======================
-			localStorage_PushChange();
+	//	=======================
+	//	SAVE DATA ELSWHERE
+	//	=======================
+		localStorage_PushChange();
+		
+		if(usecloudstorage){
 			cloudStorage_PushChange();
-		//	=======================
-
-		if(!UI.syncstate.cloudstorage){
-			// Failed to sync to the cloud, try to save locally for later
-			UI.unsync.push({list: updates});
-			if(supportsLocalStorage()){
-				localStorage.setItem('Listo_Data', JSON.stringify(UI));
+			if(!UI.syncstate.cloudstorage){
+				// Failed to sync to the cloud, try to save locally for later
+				UI.unsync.push({'list':UI.currlist, 'updates':updates});
+				localStorage_PushChange();
+				log('Unable to Push to the cloud, unsync is now');
+				log(UI.unsync);
 			}
 		}
 	}
