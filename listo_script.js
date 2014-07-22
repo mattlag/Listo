@@ -210,7 +210,9 @@
 		});
 
 		con += make_Footer_HTML();
+		con += make_Debug_Buttons();
 		con += '</div>';
+
 
 		$('body').html(con);
 
@@ -687,4 +689,12 @@
 		} catch (e) {
 			return false;
 		}
+	}
+
+	function make_Debug_Buttons() {
+		var re = '<br><br>';
+		re += '<style>.devbutton { font-size:.4em; margin:24px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>'
+		re += '<button class="devbutton" onclick="localStorage.removeItem(\'Listo_Data\');">Clear Local Storage</button>';
+		re += '<button class="devbutton" onclick="console.log(UI);">Dump UI Variable</button>';
+		return re;
 	}
