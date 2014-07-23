@@ -281,8 +281,8 @@
 			Filled Hexagon &#x2B22;
 			Empty Hexagon &#x2B21;
 		*/
-		var cs = UI.syncstate.cloudstorage ? '&#x2B22;' : '&#x2B21;';
-		var ls = (UI.syncstate.localstorage && supportsLocalStorage()) ? '&#x2B22;' : '&#x2B21;';
+		var cs = UI.syncstate.cloudstorage && !TEST.disable_cloud ? '&#x2B22;' : '&#x2B21;';
+		var ls = UI.syncstate.localstorage && !TEST.disable_local ? '&#x2B22;' : '&#x2B21;';
 		var re = '';
 
 		re += '<span style="width:16px; display:inline-block;">'+ls+'</span>local storage';
@@ -292,7 +292,7 @@
 	}
 
 	function refresh_SyncStatus() {
-		if(UI.currlist) document.getElementById('syncstatus').innerHTML = make_SyncStatus_HTML();
+		document.getElementById('syncstatus').innerHTML = make_SyncStatus_HTML();
 	}
 
 
@@ -495,12 +495,12 @@
 		log('localStorage_getData:\t START');
 		if(TEST.disable_local) return false;
 
-		if(supportsLocalStorage()){
+		try {
 			var ls = localStorage.getItem('Listo_Data');
-			log('\treturning: ' + JSON.parse(ls));
 			UI.syncstate.localstorage = now();
+			log('\treturning: ' + JSON.parse(ls));
 			return JSON.parse(ls);
-		} else {
+		} catch (e) {
 			UI.syncstate.localstorage = false;
 			return false;
 		}
@@ -568,11 +568,14 @@
 	}
 
 	function localStorage_PushChange(){
-		if(supportsLocalStorage() && !TEST.disable_local){
-			UI.syncstate.localstorage = new Date().valueOf();
-			localStorage.setItem('Listo_Data', JSON.stringify(UI));
-		} else {
-			UI.syncstate.localstorage = false;
+		UI.syncstate.localstorage = false;
+		if(!TEST.disable_local){
+			try {
+				localStorage.setItem('Listo_Data', JSON.stringify(UI));
+				UI.syncstate.localstorage = now();
+			} catch (e) {
+				log('localStorage_PushChange: local storage not supported.')
+			}
 		}
 	}
 
@@ -582,7 +585,7 @@
 		// Save data via AJAX or whatever
 
 		if(success && !TEST.disable_cloud){
-			UI.syncstate.cloudstorage = new Date().valueOf();
+			UI.syncstate.cloudstorage = now();
 		} else {
 			UI.syncstate.cloudstorage = false;
 		}
@@ -691,16 +694,6 @@
 		for(var l=0; l<listlist.length; l++){
 			var lname = listlist[l];
 			if(!UI.listdata[lname]) UI.listdata[lname] = {'items':[], 'lastadd':false, 'lastremove':false};
-		}
-	}
-
-	function supportsLocalStorage() {
-		try {
-			var re = ('localStorage' in window && window.localStorage !== null);
-			log('supportsLocalStorage: ' + re);
-			return re;
-		} catch (e) {
-			return false;
 		}
 	}
 
