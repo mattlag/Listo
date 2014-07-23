@@ -74,14 +74,14 @@ button {
 	margin-top: 36px;
 }
 
-#listStatus,
-#syncStatus,
-#themeStatus {
+#liststatus,
+#syncstatus,
+#themestatus {
 	padding: 8px 0px 0px 24px;
 }
 
-#themeStatus,
-#syncStatus {
+#themestatus,
+#syncstatus {
 	font-size: .6em;
 }
 

@@ -62,11 +62,13 @@
 		'sessionid' : false
 	};
 
-	function log(x) {
-		// Turn logging on or off
-		console.log(x);
-	}
-
+	// Test & Debug Switches
+	var TEST = {
+		'disable_local' : false,
+		'disable_cloud' : false,
+		'console_log' : true,
+		'show_dev_buttons' : true
+	};
 
 	// -----------
 	// Main Setup
@@ -210,13 +212,12 @@
 		});
 
 		con += make_Footer_HTML();
-		con += make_Debug_Buttons();
 		con += '</div>';
 
 
 		$('body').html(con);
 
-		$('#syncStatus').css('color', UI.accentmcolor.lighten(0.3).getString());
+		$('#syncstatus').css('color', UI.accentmcolor.lighten(0.3).getString());
 	}
 
 	function make_Footer_HTML() {
@@ -224,9 +225,10 @@
 		//if(UI.currlist)	con += "<div id='homeButton'>&lsaquo; home &nbsp;</div>";
 		if(UI.currlist)	con += "<div id='homeButton'>&#x276E; home &nbsp;</div>";
 		else con += '<h1>LISTO!</h1>';
-		con += "<div id='listStatus'></div>";
-		con += "<div id='syncStatus'>"+make_SyncStatus_HTML()+"</div>";
-		con += "<div id='themeStatus'>"+make_ThemeChooser_HTML()+"</div>";
+		con += "<div id='liststatus'></div>";
+		con += "<div id='syncstatus'>"+make_SyncStatus_HTML()+"</div>";
+		con += "<div id='themestatus'>"+make_ThemeChooser_HTML()+"</div>";
+		if(TEST.show_dev_buttons) con += TEST_make_Debug_Buttons();
 		con += "</div>";
 
 		return con;
@@ -280,7 +282,7 @@
 			Empty Hexagon &#x2B21;
 		*/
 		var cs = UI.syncstate.cloudstorage ? '&#x2B22;' : '&#x2B21;';
-		var ls = (UI.syncstate.localstorage || supportsLocalStorage()) ? '&#x2B22;' : '&#x2B21;';
+		var ls = (UI.syncstate.localstorage && supportsLocalStorage()) ? '&#x2B22;' : '&#x2B21;';
 		var re = '';
 
 		re += '<span style="width:16px; display:inline-block;">'+ls+'</span>local storage';
@@ -289,6 +291,9 @@
 		return re;
 	}
 
+	function refresh_SyncStatus() {
+		if(UI.currlist) document.getElementById('syncstatus').innerHTML = make_SyncStatus_HTML();
+	}
 
 
 
@@ -333,7 +338,7 @@
 			backgroundColor : UI.accentmcolor.lighten(0.1).getString()
 		});
 
-		$('#listStatus').add('#syncStatus').css('color', UI.accentmcolor.lighten(0.3).getString());
+		$('#liststatus').add('#syncstatus').css('color', UI.accentmcolor.lighten(0.3).getString());
 
 		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
 	}
@@ -363,7 +368,7 @@
 		stat +=	'<br>';
 		stat +=	'last add: ' + timeToEnglish(sl.lastadd);
 		//stat +=	'User Agent: ' + navigator.userAgent;
-		$('#listStatus').html(stat);
+		$('#liststatus').html(stat);
 
 		$('#itemNew').fadeTo('fast', 1.0);
 
@@ -488,25 +493,32 @@
 
 	function localStorage_getData(){
 		log('localStorage_getData:\t START');
+		if(TEST.disable_local) return false;
+
 		if(supportsLocalStorage()){
 			var ls = localStorage.getItem('Listo_Data');
 			log('\treturning: ' + JSON.parse(ls));
+			UI.syncstate.localstorage = now();
 			return JSON.parse(ls);
 		} else {
+			UI.syncstate.localstorage = false;
 			return false;
 		}
 	}
 
 	function cloudStorage_getData(){
 		if(!usecloudstorage) return false;
+		if(TEST.disable_cloud) return false;
 
 		var clouddata = false;
 
 		// Get data via AJAX or whatever
 
 		if(clouddata){
+			UI.syncstate.cloudstorage = now();
 			return JSON.parse(clouddata);
 		} else {
+			UI.syncstate.cloudstorage = false;
 			return false;
 		}
 	}
@@ -519,22 +531,21 @@
 	function data_Push(updates, list){
 		list = list || get_SelectedList();
 		updates = updates || {};
-		var now = new Date().valueOf();
 
 		log("data_Push: passed " + JSON.stringify(updates));
 
 		if(updates.itemadd){
 			list.items.push(updates.itemadd);
-			list.lastadd = now;
-			UI.syncstate.variable = now;
+			list.lastadd = now();
+			UI.syncstate.variable = now();
 		}
 
 		if(updates.itemremove){
 			var ai = list.items.indexOf(updates.itemremove);
 			if(ai > -1){
 				list.items.splice(ai, 1);
-				list.lastremove = now;
-				UI.syncstate.variable = now;
+				list.lastremove = now();
+				UI.syncstate.variable = now();
 			}
 		}
 
@@ -557,7 +568,7 @@
 	}
 
 	function localStorage_PushChange(){
-		if(supportsLocalStorage()){
+		if(supportsLocalStorage() && !TEST.disable_local){
 			UI.syncstate.localstorage = new Date().valueOf();
 			localStorage.setItem('Listo_Data', JSON.stringify(UI));
 		} else {
@@ -570,7 +581,7 @@
 
 		// Save data via AJAX or whatever
 
-		if(success){
+		if(success && !TEST.disable_cloud){
 			UI.syncstate.cloudstorage = new Date().valueOf();
 		} else {
 			UI.syncstate.cloudstorage = false;
@@ -623,6 +634,8 @@
 		document.title = p_title;
 		// log('updateURL\t END');
 	}
+
+	function now() {return (new Date().valueOf());}
 
 	function timeToEnglish(t){
 		if(!t) { return 'never'; }
@@ -691,10 +704,26 @@
 		}
 	}
 
-	function make_Debug_Buttons() {
+
+
+
+
+
+	// ----------------
+	// Test Functions
+	// ----------------
+
+	function TEST_make_Debug_Buttons() {
 		var re = '<br><br>';
-		re += '<style>.devbutton { font-size:.4em; margin:24px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>'
+		re += '<style>.devbutton { font-size:.6em; margin:24px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>';
+		re += '<button class="devbutton" onclick="UI.currlist? navTo_ListPage() : navTo_HomePage();">Soft Refresh</button>';
 		re += '<button class="devbutton" onclick="localStorage.removeItem(\'Listo_Data\');">Clear Local Storage</button>';
 		re += '<button class="devbutton" onclick="console.log(UI);">Dump UI Variable</button>';
+		re += '<button class="devbutton" onclick="TEST.disable_local = !TEST.disable_local; refresh_SyncStatus(); log(\'TEST.disable_local = \' + TEST.disable_local);">Toggle Local Storage</button>';
+		re += '<button class="devbutton" onclick="TEST.disable_cloud = !TEST.disable_cloud; refresh_SyncStatus(); log(\'TEST.disable_cloud = \' + TEST.disable_cloud);">Toggle Cloud Storage</button>';
 		return re;
+	}
+
+	function log(x) {
+		if(TEST.console_log) console.log(x);
 	}
