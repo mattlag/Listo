@@ -201,8 +201,8 @@
 			con += 'tabindex="'+(l+1)+'" ';
 			con += 'style="cursor:pointer; background-color:'+bgcolor+'; color:'+txcolor+';" ';
 			con += 'onclick="set_SelectedList(\''+lname+'\');">';
-			con += lname.replace('_', '&nbsp;');
-			if(itemnum) con += '<span class="listcount" style="background-color:'+countbgcolor+'; color:'+bgcolor+';">'+itemnum+'</span>';
+			con += '<span class="itemname">'+lname.replace('_', '&nbsp;')+'</span>';
+			if(itemnum) con += '<span class="itemcount" style="background-color:'+countbgcolor+';"><span style="color:'+bgcolor+';">'+itemnum+'</span></span>';
 			con += '</div>';
 		});
 
@@ -416,7 +416,7 @@
 		var bgitem = bgc.getString();
 		var bgclose = bgc.lighten(0.1).getString();
 		var re = '<div id="item'+num+'" class="item" style="background-color:'+bgitem+';">';
-		re += '<span style="color:'+txtitem+';">' + name + '</span>';
+		re += '<span class="itemname" style="color:'+txtitem+';">' + name + '</span>';
 		if(!hideclose){
 			re += '<button class="removeButton" onclick="list_RemoveItem('+num+');" style="color:'+bgclose+';">&#10006;</button>';
 		}

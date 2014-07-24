@@ -1,6 +1,6 @@
 * {
-	margin: 0px;
-	padding: 0px;
+	margin: 0;
+	padding: 0;
 }
 
 body {
@@ -9,9 +9,10 @@ body {
 }
 
 h1 {
-	font-size:3em;
+	font-size: 6vh;
 	font-style: italic;
 	font-weight: normal;
+	margin-top: 3vh;
 }
 
 button,
@@ -19,22 +20,20 @@ button:active,
 button:hover,
 button:focus,
 button:visited {
-	border:0px;
+	border: 0;
 	cursor: pointer;
 }
 
 #wrapper {	
 	font-family: "Segoe UI", sans-serif;
-	font-size:26px;
+	font-size: 4vh;
 	overflow-x: hidden;
-	/*
-	overflow-y: scroll;
-	*/
+	/*overflow-y: scroll;*/
 	width: 100%;
 	height: 100%;
 	position: absolute;
-	top: 0px;
-	left: 0px;
+	top: 0;
+	left: 0;
 }
 
 #itemGrid {
@@ -44,56 +43,61 @@ button:visited {
 #itemNew, 
 .item {
 	width: 100%;
-	padding: 16px 0px 16px 20px;
-	border: 0px;
-	height:1.4em;
-}
-
-.item {
+	font-size: 4vh;
+	padding: 1vh 0vh 1vh 2vh;
+	border: 0;
 	color: white;
 }
 
-.listcount {
+.itemname {
+	height: 6vh;
+	margin-right: 2vh;
+}
+
+.itemcount {
+	height: 3vh;
+	width: 3vh;
 	display: inline-block;
 	text-align: center;
-	font-size:12px;
-	margin-left:12px;
-	height:20px;
-	width:20px;
-	line-height: 20px;
-	border-radius: 10px;
+	font-size: 2.5vh;
+	line-height: 2.5vh;
+	border-radius: 1.5vh;
 	position: relative;
-	top: -4px;
+	top: -0.5vh;
+}
+
+.itemcount span {
+	position: relative;
+	left: -0.05vh;
+	top: 0.1vh;
 }
 
 .removeButton {
-	color: #33c;
-	font-size:1.2em;
-	line-height: 26px;
+	font-size: 3vh;
+	line-height: 3vh;
 	background-color: transparent;
-	border: 0px;
-	margin: 8px 20px;
+	border: 0;
 }
 
 #footer {
-	font-size: .5em;
-	margin: 36px 0px 20px 20px;
+	font-size: 2vh;
+	margin: 8vh 0vh 12vh 2vh;
 }
 
 #liststatus,
 #syncstatus,
 #themestatus {
-	padding: 12px 0px 0px 0px;
+	padding: 2vh 0vh 0vh 0vh;
 }
 
 #homeButton {
-	padding: 12px 20px;
-	width:200px;
+	padding: 2vh;
+	width: 40vh;
 	text-align: left;
-	border-top-right-radius: 6px;
-	border-bottom-right-radius: 6px;
-	margin-left:-20px;
-	font-size:1.4em;
+	border-top-right-radius: 1vh;
+	border-bottom-right-radius: 1vh;
+	margin-left: -2vh;
+	font-size: 3vh;
 }
 
 #themechoices {
@@ -101,10 +105,11 @@ button:visited {
 }
 
 .themechooserbutton {
-	padding: 4px 16px;
-	border-radius: 3px;
-	border:0px;
-	margin-right:2px;
-	margin-bottom:2px;
+	font-size: 2vh;
+	padding: 1vh 2vh;
+	border-radius: .5vh;
+	border: 0;
+	margin-right: 1vh;
+	margin-bottom: 1vh;
 }
 
