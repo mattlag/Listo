@@ -6,6 +6,16 @@
 
 	/*
 	--------------------------------------------------------
+	Lists
+	An array of list names you want to keep.
+	List names should use underscores_between_words
+	--------------------------------------------------------
+	*/
+	var listlist = ['to_do', 'groceries', 'household', 'online'];
+
+
+	/*
+	--------------------------------------------------------
 	Accent Colors
 	This should be a RGB color specified as an object.
 	To switch the accent color, append '?color=orange'
@@ -22,26 +32,21 @@
 		'gray' :	{'r':64,'g':64,'b':64}
 	};
 
-	/*
-	--------------------------------------------------------
-	Lists
-	An array of list names you want to keep.
-	List names should use underscores_between_words
-	--------------------------------------------------------
-	*/
-	var listlist = ['to_do', 'groceries', 'household', 'online'];
 
 	/*
 	--------------------------------------------------------
-	usecloudstorage
+	cloudstorageserverurl
 	Listo! works fine using local HTML5 storage, but if you
 	hook it up to a server, it can persist changes in the
 	cloud.  This requires you to write a .php backend that
 	saves and serves up values via POST.
-	If you don't want to do that, you can turn it off here.
+	If you want to do that, specify the URL of the server
+	page here.
 	--------------------------------------------------------
 	*/
-	var usecloudstorage = true;
+	var cloudstorageserverurl = false;
+	// var cloudstorageserverurl = 'http://www.yourdomain.com/listo/sync.php';
+	// var cloudstorageserverurl = '/sync.php';
 
 
 
@@ -222,12 +227,12 @@
 		if(UI.currlist){
 			con += "<button id='homeButton'>&#x276E; home &nbsp;</button>";
 			con += '<h1>' + UI.currlist.replace('_', ' ') + '</h1>';
+			con += "<div id='liststatus'>"+make_ListStatus_HTML()+"</div>";
 		} else {
 			con += '<h1>listo!</h1>';
+			con += "<div id='syncstatus'>"+make_SyncStatus_HTML()+"</div>";
+			con += "<div id='themestatus'>"+make_ThemeChooser_HTML()+"</div>";
 		}
-		if(UI.currlist) con += "<div id='liststatus'>"+make_ListStatus_HTML()+"</div>";
-		con += "<div id='syncstatus'>"+make_SyncStatus_HTML()+"</div>";
-		con += "<div id='themestatus'>"+make_ThemeChooser_HTML()+"</div>";
 		if(TEST.show_dev_buttons) con += TEST_make_Debug_Buttons();
 		con += "</div>";
 
@@ -524,7 +529,7 @@
 	}
 
 	function cloudStorage_getData(){
-		if(!usecloudstorage) return false;
+		if(!cloudstorageserverurl) return false;
 		if(TEST.disable_cloud) return false;
 
 		var clouddata = false;
@@ -573,7 +578,7 @@
 	//	=======================
 		localStorage_PushChange();
 		
-		if(usecloudstorage){
+		if(cloudstorageserverurl){
 			cloudStorage_PushChange();
 			if(!UI.syncstate.cloudstorage){
 				// Failed to sync to the cloud, try to save locally for later
