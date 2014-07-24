@@ -25,7 +25,7 @@
 	/*
 	--------------------------------------------------------
 	Lists
-	An array of lists you want to keep.
+	An array of list names you want to keep.
 	List names should use underscores_between_words
 	--------------------------------------------------------
 	*/
@@ -59,7 +59,7 @@
 		'accentmcolor' : {},
 		'syncstate' : {'variable':false, 'localstorage':false, 'cloudstorage':false},
 		'unsync' : [],
-		'sessionid' : false
+		'animationspeed' : 90
 	};
 
 	// Test & Debug Switches
@@ -76,9 +76,6 @@
 
 	$(document).ready(function(){
 		log('>>> READY \t START');
-
-		UI.sessionid = Math.round(Math.random()*100000).toString(16);
-		log('New session id: ' + UI.sessionid);
 
 		data_Get();
 
@@ -109,6 +106,8 @@
 			navTo_HomePage();
 		}
 
+		refresh_SyncStatus();
+
 		log('>>> READY \t END\n');
 	});
 
@@ -119,13 +118,7 @@
 		add_HomePage_HTML();
 		$('#wrapper')
 			.css({left: '-=100%', opacity: 0})
-			.animate({left: 0, opacity: 1},{queue: false, duration: 'fast'});
-		$('h1').css({color: UI.accentmcolor.lighten(0.2).getString()});
-
-		// if(UI.mobile){
-		//	log("WP7 = true");
-		//	$('#wrapper').css('overflow-y' , 'scroll');
-		// }
+			.animate({left: 0, opacity: 1},{queue: false, duration: UI.animationspeed});
 	}
 
 	function navTo_ListPage(){
@@ -135,7 +128,7 @@
 		// this wrapper is the from the landing page - used to be  left: '-=100%'
 		var wrap = $('#wrapper');
 		// var wrapchil = wrap.children();
-		var wrapchil = $('.listname');
+		var wrapchil = $('.item');
 
 		// log('\twrapchil.length ' + wrapchil.length);
 
@@ -157,13 +150,14 @@
 							$.dequeue(that);
 							if(i === wrapchil.length-1) $.dequeue(that);
 						},
-						duration: 60,
+						duration: (UI.animationspeed/3),
+						// duration: 500,
 					});
 				});
 			});
 
 			$.queue(wrap[0], 'fx', function(){
-				$('#wrapper').fadeOut(60, function(){
+				$('#wrapper').fadeOut(UI.animationspeed, function(){
 					// log('Calling add_ListPageHTML from the fx queue');
 					add_ListPage_HTML();
 				});
@@ -199,15 +193,16 @@
 			var bg = UI.accentmcolor.setLightness(((listlist.length + 1) - l) *incl + UI.accentmcolor.getLightness());
 			var bgcolor = bg.getString();
 			var txcolor = bg.lighten(0.8).getString();
-			var countcolor = bg.lighten(0.6).getString();
+			var countbgcolor = bg.lighten(0.15).getString();
 			var lname = listlist[l];
 			var itemnum = UI.listdata[lname].items.length;
 
-			con += '<div class="listname" ';
-			con += 'style="background-color:'+bgcolor+'; color:'+txcolor+';" ';
+			con += '<div class="item" ';
+			con += 'tabindex="'+(l+1)+'" ';
+			con += 'style="cursor:pointer; background-color:'+bgcolor+'; color:'+txcolor+';" ';
 			con += 'onclick="set_SelectedList(\''+lname+'\');">';
 			con += lname.replace('_', '&nbsp;');
-			if(itemnum) con += '<span class="listcount" style="color:'+countcolor+';">('+itemnum+')</span>';
+			if(itemnum) con += '<span class="listcount" style="background-color:'+countbgcolor+'; color:'+bgcolor+';">'+itemnum+'</span>';
 			con += '</div>';
 		});
 
@@ -221,11 +216,16 @@
 	}
 
 	function make_Footer_HTML() {
-		var con = "<div id='footer'>";
-		//if(UI.currlist)	con += "<div id='homeButton'>&lsaquo; home &nbsp;</div>";
-		if(UI.currlist)	con += "<div id='homeButton'>&#x276E; home &nbsp;</div>";
-		else con += '<h1>LISTO!</h1>';
-		con += "<div id='liststatus'></div>";
+		var fcolor = UI.accentmcolor.lighten(0.3).getString();
+
+		var con = "<div id='footer' style='color:"+fcolor+"'>";
+		if(UI.currlist){
+			con += "<button id='homeButton'>&#x276E; home &nbsp;</button>";
+			con += '<h1>' + UI.currlist.replace('_', ' ') + '</h1>';
+		} else {
+			con += '<h1>listo!</h1>';
+		}
+		if(UI.currlist) con += "<div id='liststatus'>"+make_ListStatus_HTML()+"</div>";
 		con += "<div id='syncstatus'>"+make_SyncStatus_HTML()+"</div>";
 		con += "<div id='themestatus'>"+make_ThemeChooser_HTML()+"</div>";
 		if(TEST.show_dev_buttons) con += TEST_make_Debug_Buttons();
@@ -281,18 +281,16 @@
 			Filled Hexagon &#x2B22;
 			Empty Hexagon &#x2B21;
 		*/
-		var cs = UI.syncstate.cloudstorage && !TEST.disable_cloud ? '&#x2B22;' : '&#x2B21;';
-		var ls = UI.syncstate.localstorage && !TEST.disable_local ? '&#x2B22;' : '&#x2B21;';
 		var re = '';
 
-		re += '<span style="width:16px; display:inline-block;">'+ls+'</span>local storage';
+		re += 'local storage: ' + timeToEnglish(UI.syncstate.localstorage);
 		re += '<br>';
-		re += '<span style="width:16px; display:inline-block;">'+cs+'</span>cloud storage';
+		re += 'cloud storage: ' + timeToEnglish(UI.syncstate.cloudstorage);
 		return re;
 	}
 
 	function refresh_SyncStatus() {
-		document.getElementById('syncstatus').innerHTML = make_SyncStatus_HTML();
+		try { document.getElementById('syncstatus').innerHTML = make_SyncStatus_HTML(); } catch (e){}
 	}
 
 
@@ -316,10 +314,11 @@
 
 		$('body').html(con);
 		add_List_HTML();
+		list_FlashFocusClearInput();
 
 		var lcon = $('#wrapper');
 		lcon.css({'left': '100%', opacity: 0});
-		lcon.animate({'left': 0, opacity: 1},{duration: 'fast'});
+		lcon.animate({'left': 0, opacity: 1},{duration: UI.animationspeed});
 
 		$('#itemNew').on('keypress', function(event) {
 			if ( event.which == 13 ) {
@@ -337,8 +336,6 @@
 			color: UI.accentmcolor.lighten(0.4).getString(),
 			backgroundColor : UI.accentmcolor.lighten(0.1).getString()
 		});
-
-		$('#liststatus').add('#syncstatus').css('color', UI.accentmcolor.lighten(0.3).getString());
 
 		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
 	}
@@ -361,18 +358,22 @@
 			con += '<i>it\'s empty in here...</i></div>';
 		}
 		$('#itemGrid').html(con);
+		refresh_ListStatus();
 
-		// List Status
-		var stat =	'<b>' + UI.currlist.replace('_', ' ') + '</b><br>';
-		stat +=	'last remove: ' + timeToEnglish(sl.lastremove);
+		log("add_List_HTML \t END\n");
+	}
+
+	function make_ListStatus_HTML() {
+		var sl = get_SelectedList();
+		var	stat =	'last remove: ' + timeToEnglish(sl.lastremove);
 		stat +=	'<br>';
 		stat +=	'last add: ' + timeToEnglish(sl.lastadd);
 		//stat +=	'User Agent: ' + navigator.userAgent;
-		$('#liststatus').html(stat);
+		return stat;
+	}
 
-		$('#itemNew').fadeTo('fast', 1.0);
-
-		log("add_List_HTML \t END\n");
+	function refresh_ListStatus() {
+		try { document.getElementById('liststatus').innerHTML = make_ListStatus_HTML(); } catch (e){}
 	}
 
 	function list_AddNewItem(item){
@@ -386,25 +387,27 @@
 		if(item !== ''){
 			$('#itemGrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.accentmcolor, true));
 			$('#itemGrid .item:first span').css({color:'white'});
-			$('#itemGrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.7).getString()}).toggle().slideDown('fast');
-
+			$('#itemGrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animationspeed*1.6), add_List_HTML);
 			data_Push({"itemadd": item});
-			add_List_HTML();
 		} else {
 			data_Get();
 		}
 		
-		$('#itemNew').val('').fadeTo('fast', 0.8);
+		list_FlashFocusClearInput();
 	}
 
 	function list_RemoveItem(i){
 		var item = $(('#item'+i));
 
-		item.slideUp('fast', function(){
+		item.slideUp(UI.animationspeed, function(){
 			data_Push({'itemremove': $.trim(inputSan(item.children('*:first').html(), false))});
 			add_List_HTML();
-			$('#itemNew').val('').fadeTo('fast', 0.8);
+			list_FlashFocusClearInput();
 		});
+	}
+
+	function list_FlashFocusClearInput() {
+		$('#itemNew').fadeTo(UI.animationspeed, 0.8).val('').fadeTo(UI.animationspeed, 1.0).focus();
 	}
 
 	function make_Item_HTML(num, name, bgc, hideclose) {
@@ -415,7 +418,7 @@
 		var re = '<div id="item'+num+'" class="item" style="background-color:'+bgitem+';">';
 		re += '<span style="color:'+txtitem+';">' + name + '</span>';
 		if(!hideclose){
-			re += '<span class="removeButton" onclick="list_RemoveItem('+num+');" style="color:'+bgclose+';">&#10006;</span>';
+			re += '<button class="removeButton" onclick="list_RemoveItem('+num+');" style="color:'+bgclose+';">&#10006;</button>';
 		}
 		re += '</div>';
 
@@ -458,12 +461,14 @@
 
 	function data_Get() {
 		// Set default  data
+		log('data_Get\t START');
 		var got_clouddata = cloudStorage_getData();
 		var got_localdata = localStorage_getData();
 		log('\tCloud Storage and Local Storage: ' + got_clouddata + ' ' + got_localdata);
 
 		if(got_clouddata && got_clouddata !== {}){
 			// Cloud connection is good
+			log('\tBranch: Got Clouddata');
 			UI = got_clouddata;
 
 			var uns = got_localdata.unsync;
@@ -484,11 +489,19 @@
 
 		} else if (got_localdata && got_localdata !== {}) {
 			// If no Cloud Storage, fallback to Local Storage
+			log('\tBranch: Got Localdata (but not cloud data)');
 			UI = got_localdata;
+			log('\tCopied got_localdata to UI:');
+			log(got_localdata);
+			log(UI);
 		} else {
 			// Nothing saved, default to empty lists
+			log('\tBranch: No Data');
 			setupDefaultLists();
 		}
+		refresh_SyncStatus();
+
+		log('data_Get\t END');
 	}
 
 	function localStorage_getData(){
@@ -496,12 +509,16 @@
 		if(TEST.disable_local) return false;
 
 		try {
-			var ls = localStorage.getItem('Listo_Data');
-			UI.syncstate.localstorage = now();
-			log('\treturning: ' + JSON.parse(ls));
-			return JSON.parse(ls);
+			var ls = JSON.parse(localStorage.getItem('Listo_Data'));
+			ls.syncstate.localstorage = now();
+			log('\treturning: ' + ls);
+			log('\tsyncstate.localstorage: ' + ls.syncstate.localstorage);
+			log('localStorage_getData:\t END');
+			return ls;
 		} catch (e) {
 			UI.syncstate.localstorage = false;
+			log('\tCATCH syncstate.localstorage: ' + UI.syncstate.localstorage);
+			log('localStorage_getData:\t END');
 			return false;
 		}
 	}
@@ -512,11 +529,12 @@
 
 		var clouddata = false;
 
-		// Get data via AJAX or whatever
+		// Get JSON data via AJAX or whatever
 
 		if(clouddata){
-			UI.syncstate.cloudstorage = now();
-			return JSON.parse(clouddata);
+			clouddata = JSON.parse(clouddata);
+			clouddata.syncstate.cloudstorage = now();
+			return clouddata;
 		} else {
 			UI.syncstate.cloudstorage = false;
 			return false;
@@ -565,6 +583,8 @@
 				log(UI.unsync);
 			}
 		}
+
+		refresh_SyncStatus();
 	}
 
 	function localStorage_PushChange(){
@@ -574,7 +594,7 @@
 				localStorage.setItem('Listo_Data', JSON.stringify(UI));
 				UI.syncstate.localstorage = now();
 			} catch (e) {
-				log('localStorage_PushChange: local storage not supported.')
+				log('localStorage_PushChange: local storage not supported.');
 			}
 		}
 	}
@@ -582,7 +602,7 @@
 	function cloudStorage_PushChange() {
 		var success = false;
 
-		// Save data via AJAX or whatever
+		// Save JSON data via AJAX or whatever
 
 		if(success && !TEST.disable_cloud){
 			UI.syncstate.cloudstorage = now();
@@ -708,7 +728,7 @@
 
 	function TEST_make_Debug_Buttons() {
 		var re = '<br><br>';
-		re += '<style>.devbutton { font-size:.6em; margin:24px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>';
+		re += '<style>.devbutton { font-size:.6em; margin-right:24px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>';
 		re += '<button class="devbutton" onclick="UI.currlist? navTo_ListPage() : navTo_HomePage();">Soft Refresh</button>';
 		re += '<button class="devbutton" onclick="localStorage.removeItem(\'Listo_Data\');">Clear Local Storage</button>';
 		re += '<button class="devbutton" onclick="console.log(UI);">Dump UI Variable</button>';

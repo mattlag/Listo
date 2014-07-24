@@ -1,6 +1,4 @@
 * {
-	font-family: "Segoe UI", sans-serif;
-	font-size: 1.1em;
 	margin: 0px;
 	padding: 0px;
 }
@@ -12,29 +10,22 @@ body {
 
 h1 {
 	font-size:3em;
-	padding: 40px 0px 0px 24px;
 	font-style: italic;
 	font-weight: normal;
 }
 
-button {
+button,
+button:active,
+button:hover,
+button:focus,
+button:visited {
+	border:0px;
 	cursor: pointer;
-}
-
-.listname {
-	cursor: pointer;
-	font-size: 1.2em;
-	width: 100%;
-	padding: 24px;
-	overflow-x: hidden;
-}
-
-.listcount {
-	font-size:.6em;
-	margin-left:12px;
 }
 
 #wrapper {	
+	font-family: "Segoe UI", sans-serif;
+	font-size:26px;
 	overflow-x: hidden;
 	/*
 	overflow-y: scroll;
@@ -46,51 +37,63 @@ button {
 	left: 0px;
 }
 
+#itemGrid {
+	width: 100%;
+}
+
 #itemNew, 
 .item {
 	width: 100%;
-	padding: 16px 0px 16px 18px;
+	padding: 16px 0px 16px 20px;
 	border: 0px;
-}
-
-#itemGrid {
-	width: 100%;
+	height:1.4em;
 }
 
 .item {
 	color: white;
 }
 
+.listcount {
+	display: inline-block;
+	text-align: center;
+	font-size:12px;
+	margin-left:12px;
+	height:20px;
+	width:20px;
+	line-height: 20px;
+	border-radius: 10px;
+	position: relative;
+	top: -4px;
+}
+
 .removeButton {
 	color: #33c;
+	font-size:1.2em;
+	line-height: 26px;
 	background-color: transparent;
 	border: 0px;
 	margin: 8px 20px;
-	cursor: pointer;
 }
 
 #footer {
-	font-size: .8em;
-	margin-top: 36px;
+	font-size: .5em;
+	margin: 36px 0px 20px 20px;
 }
 
 #liststatus,
 #syncstatus,
 #themestatus {
-	padding: 8px 0px 0px 24px;
-}
-
-#themestatus,
-#syncstatus {
-	font-size: .6em;
+	padding: 12px 0px 0px 0px;
 }
 
 #homeButton {
-	padding: 12px 24px;
+	padding: 12px 20px;
 	width:200px;
-	cursor: pointer;
+	text-align: left;
 	border-top-right-radius: 6px;
 	border-bottom-right-radius: 6px;
+	margin-left:-20px;
+	font-size:1.4em;
 }
 
 #themechoices {
@@ -102,6 +105,6 @@ button {
 	border-radius: 3px;
 	border:0px;
 	margin-right:2px;
-	margin-bottom: 2px;
+	margin-bottom:2px;
 }
 
