@@ -5,15 +5,15 @@
 }
 
 body {
-	background-color: rgb(200,200,200);
+	background-color: rgb(100,100,100);
 	overflow-x: hidden;
 }
 
 h1 {
-	font-size: 6vh;
+	font-size: 10vh;
 	font-style: italic;
 	font-weight: normal;
-	margin-top: 3vh;
+	margin-top: 4vh;
 }
 
 button,
@@ -28,7 +28,7 @@ button:visited {
 #wrapper {	
 	font-size: 4vh;
 	overflow-x: hidden;
-	/*overflow-y: scroll;*/
+	overflow-y: scroll;
 	width: 100%;
 	height: 100%;
 	position: absolute;
@@ -36,47 +36,59 @@ button:visited {
 	left: 0;
 }
 
-#itemGrid {
+#itemgrid {
 	width: 100%;
 }
 
-#itemNew, 
+#itemnew, 
 .item {
 	width: 100%;
-	font-size: 4vh;
 	padding: 1vh 0vh 1vh 2vh;
+	font-size: 4vh;
 	border: 0;
-	color: white;
 }
 
 .itemname {
 	height: 6vh;
+	font-size: 4vh;
 	margin-right: 2vh;
 }
 
-.itemcount {
-	height: 3vh;
-	width: 3vh;
-	display: inline-block;
-	text-align: center;
-	font-size: 2.5vh;
-	line-height: 2.5vh;
-	border-radius: 1.5vh;
-	position: relative;
-	top: -0.5vh;
-}
-
-.itemcount span {
-	position: relative;
-	left: -0.05vh;
-	top: 0.1vh;
-}
-
-.removeButton {
+.itemremove {
 	font-size: 3vh;
 	line-height: 3vh;
 	background-color: transparent;
-	border: 0;
+}
+
+.list {
+	width: 100%;
+	padding: 2vh 0vh 2vh 2vh;
+	color: white;
+	height: 16vh;
+}
+
+.listname {
+	font-size: 12vh;
+	margin-right: 4vh;
+}
+
+
+.listcount {
+	height: 5vh;
+	width: 5vh;
+	display: inline-block;
+	text-align: center;
+	font-size: 4vh;
+	line-height: 4vh;
+	border-radius: 2.5vh;
+	position: relative;
+	top: -1vh;
+}
+
+.listcount span {
+	position: relative;
+	left: -0.1vh;
+	top: 0.2vh;
 }
 
 #footer {
@@ -90,7 +102,7 @@ button:visited {
 	padding: 2vh 0vh 0vh 0vh;
 }
 
-#homeButton {
+#homebutton {
 	padding: 2vh;
 	width: 40vh;
 	text-align: left;

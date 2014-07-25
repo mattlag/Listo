@@ -64,7 +64,8 @@
 		'accentmcolor' : {},
 		'syncstate' : {'variable':false, 'localstorage':false, 'cloudstorage':false},
 		'unsync' : [],
-		'animationspeed' : 90
+		'w': false,
+		'animationspeed' : 500
 	};
 
 	// Test & Debug Switches
@@ -72,7 +73,8 @@
 		'disable_local' : false,
 		'disable_cloud' : false,
 		'console_log' : true,
-		'show_dev_buttons' : true
+		'show_dev_buttons' : true,
+		'console_entries' : []
 	};
 
 	// -----------
@@ -99,16 +101,15 @@
 			log('\tDefault Accent Color: ' + UI.accentcolorname);
 		}
 
-		$('body').css('background-color', UI.accentmcolor.getString());
-
+		$('body').add('#wrapper').css('background-color', UI.accentmcolor.getString());
 
 		// Page Content
+		UI.w = $('#wrapper');
+		refresh_HomePage_HTML();
 		var bk = document.location.href.split('?list=')[1];
 
 		if(listlist.indexOf(bk) > -1){
-			set_SelectedList(bk.split('?color=')[0]);
-		} else {
-			navTo_HomePage();
+			navigate(bk.split('?color=')[0]);
 		}
 
 		refresh_SyncStatus();
@@ -116,65 +117,36 @@
 		log('>>> READY \t END\n');
 	});
 
-	function navTo_HomePage(){
-		UI.currlist = false;
-		updateURL();
+	function navigate(list){
+		log('\nnavigate \t START');
+		log('\tto: ' + (list? list : 'homepage'));
 
-		add_HomePage_HTML();
-		$('#wrapper')
-			.css({left: '-=100%', opacity: 0})
-			.animate({left: 0, opacity: 1},{queue: false, duration: UI.animationspeed});
-	}
+		var dir = 1;
 
-	function navTo_ListPage(){
-		log("\nnavTo_ListPage \t START");
-		updateURL();
-
-		// this wrapper is the from the landing page - used to be  left: '-=100%'
-		var wrap = $('#wrapper');
-		// var wrapchil = wrap.children();
-		var wrapchil = $('.item');
-
-		// log('\twrapchil.length ' + wrapchil.length);
-
-		if(wrapchil.length > 0){
-			wrapchil.each(function (i, item) {
-				// log('wrapchil each: ' + i);
-				var ti = $(item);
-
-				// Add animations on each item to the fx queue on the navigation DOM element
-				$.queue(wrap[0], 'fx', function () {
-					var that = this;
-					var ani = {opacity:0, width:0};
-					var ct = ti.html().split('<')[0].replace(' ', '_').replace('&nbsp;', '_');
-					// log('comparing ' + UI.currlist + ' == ' + ct);
-					if(UI.currlist == ct) { ani = {}; }
-
-					ti.animate(ani, {
-						complete: function(){
-							$.dequeue(that);
-							if(i === wrapchil.length-1) $.dequeue(that);
-						},
-						duration: (UI.animationspeed/3),
-						// duration: 500,
-					});
-				});
-			});
-
-			$.queue(wrap[0], 'fx', function(){
-				$('#wrapper').fadeOut(UI.animationspeed, function(){
-					// log('Calling add_ListPageHTML from the fx queue');
-					add_ListPage_HTML();
-				});
-			});
-
-			wrap.dequeue();
-
+		if(list){
+			UI.currlist = list;
+			if(!UI.listdata[list]) UI.listdata[list] = {'items':[], 'lastremove':false, 'lastadd':false};
+			dir = -1;
 		} else {
-			add_ListPage_HTML();
+			UI.currlist = false;
 		}
 
-		log("navTo_ListPage \t END\n");
+		updateURL();
+
+		UI.w.css({'overflow': 'hidden'});
+		UI.w.animate(
+			{'left': (2000*dir), 'opacity': 0},
+			{'duration': 777, 'complete':
+				function(){
+					dir*=-1;
+					UI.currlist ? refresh_ListPage_HTML() : refresh_HomePage_HTML();
+					UI.w.css({'left': (2000*dir)})
+					.animate({'left': 0, 'opacity': 1}, {'duration': 777});
+				}
+			});
+		UI.w.css({'overflow-y': 'scroll'});
+
+		log('navigate \t END\n');
 	}
 
 
@@ -184,14 +156,12 @@
 
 
 
-
-
 	// --------------------------------
-	// HOME and COMMON HTML Generators
+	// HOME Functions
 	// --------------------------------
 
-	function add_HomePage_HTML(){
-		var con = '<div id="wrapper">';
+	function refresh_HomePage_HTML(){
+		var con = '';
 		var incl = (((100 - UI.accentmcolor.getLightness())*0.4) / (listlist.length + 1));
 
 		$(listlist).each(function(l){
@@ -200,43 +170,33 @@
 			var txcolor = bg.lighten(0.8).getString();
 			var countbgcolor = bg.lighten(0.15).getString();
 			var lname = listlist[l];
-			var itemnum = UI.listdata[lname].items.length;
+			var listnum = UI.listdata[lname].items.length;
 
-			con += '<div class="item" ';
+			con += '<div class="list" ';
 			con += 'tabindex="'+(l+1)+'" ';
 			con += 'style="cursor:pointer; background-color:'+bgcolor+'; color:'+txcolor+';" ';
-			con += 'onclick="set_SelectedList(\''+lname+'\');">';
-			con += '<span class="itemname">'+lname.replace('_', '&nbsp;')+'</span>';
-			if(itemnum) con += '<span class="itemcount" style="background-color:'+countbgcolor+';"><span style="color:'+bgcolor+';">'+itemnum+'</span></span>';
+			con += 'onclick="navigate(\''+lname+'\');">';
+			con += '<span class="listname">'+lname.replace('_', '&nbsp;')+'</span>';
+			if(listnum) con += '<span class="listcount" style="background-color:'+countbgcolor+';"><span style="color:'+bgcolor+';">'+listnum+'</span></span>';
 			con += '</div>';
 		});
 
-		con += make_Footer_HTML();
-		con += '</div>';
+		con += '<div id="footer"></div>';
 
-
-		$('body').html(con);
-
+		$('#wrapper').html(con);
 		$('#syncstatus').css('color', UI.accentmcolor.lighten(0.3).getString());
+
+		refresh_HomePageFooter_HTML();
 	}
 
-	function make_Footer_HTML() {
-		var fcolor = UI.accentmcolor.lighten(0.3).getString();
+	function refresh_HomePageFooter_HTML() {
+		var con = '<h1>listo!</h1>';
+		con += "<div id='syncstatus'>"+make_SyncStatus_HTML()+"</div>";
+		con += "<div id='themestatus'>"+make_ThemeChooser_HTML()+"</div>";
 
-		var con = "<div id='footer' style='color:"+fcolor+"'>";
-		if(UI.currlist){
-			con += "<button id='homeButton'>&#x276E; home &nbsp;</button>";
-			con += '<h1>' + UI.currlist.replace('_', ' ') + '</h1>';
-			con += "<div id='liststatus'>"+make_ListStatus_HTML()+"</div>";
-		} else {
-			con += '<h1>listo!</h1>';
-			con += "<div id='syncstatus'>"+make_SyncStatus_HTML()+"</div>";
-			con += "<div id='themestatus'>"+make_ThemeChooser_HTML()+"</div>";
-		}
 		if(TEST.show_dev_buttons) con += TEST_make_Debug_Buttons();
-		con += "</div>";
 
-		return con;
+		$('#footer').html(con).css({'color': UI.accentmcolor.lighten(0.4).getString()});
 	}
 
 	function make_ThemeChooser_HTML() {
@@ -282,12 +242,7 @@
 	}
 
 	function make_SyncStatus_HTML() {
-		/*
-			Filled Hexagon &#x2B22;
-			Empty Hexagon &#x2B21;
-		*/
 		var re = '';
-
 		re += 'local storage: ' + timeToEnglish(UI.syncstate.localstorage);
 		re += '<br>';
 		re += 'cloud storage: ' + timeToEnglish(UI.syncstate.cloudstorage);
@@ -307,46 +262,46 @@
 
 
 	// ----------------------------------------
-	// LIST HTML Generators & Helper Functions
+	// LIST Functions
 	// ----------------------------------------
 
-	function add_ListPage_HTML(){
-		var con = "<div id='wrapper'>";
-		con += "<input type='text' id='itemNew'>";
-		con += "<div id='itemGrid'></div>";
-		con += make_Footer_HTML();
-		con += "</div>";
+	function refresh_ListPage_HTML(){
+		log('\nrefresh_ListPage_HTML \t START');
 
-		$('body').html(con);
-		add_List_HTML();
+		var con = "<input type='text' id='itemnew'>";
+		con += "<div id='itemgrid'></div>";
+		con += "<div id='footer'></div>";
+
+		$('#wrapper').html(con);
+		refresh_List_HTML();
+		refresh_ListPageFooter_HTML();
+		refresh_ListStatus_HTML();
 		list_FlashFocusClearInput();
 
-		var lcon = $('#wrapper');
-		lcon.css({'left': '100%', opacity: 0});
-		lcon.animate({'left': 0, opacity: 1},{duration: UI.animationspeed});
-
-		$('#itemNew').on('keypress', function(event) {
+		$('#itemnew').on('keypress', function(event) {
 			if ( event.which == 13 ) {
-				var ni = $('#itemNew');
+				var ni = $('#itemnew');
 				list_AddNewItem(ni.val());
 			}
 		}).css({
 			color: UI.accentmcolor.getString(),
 			backgroundColor : "rgb(250,250,250)"
 		});
-
-		$('#homeButton').on('click', function(event) {
-			navTo_HomePage();
+		$('#homebutton').on('click', function(event) {
+			navigate();
 		}).css({
 			color: UI.accentmcolor.lighten(0.4).getString(),
 			backgroundColor : UI.accentmcolor.lighten(0.1).getString()
 		});
 
+		// var fcolor = UI.accentmcolor.lighten(0.3).getString();
 		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
+
+		log('refresh_ListPage_HTML \t END\n');
 	}
 
-	function add_List_HTML(){
-		log("\nadd_List_HTML \t START");
+	function refresh_List_HTML(){
+		log("\nrefresh_List_HTML \t START");
 		var sl = get_SelectedList();
 
 		log('\tSelected List Items: ' + JSON.stringify(sl.items));
@@ -362,23 +317,28 @@
 			con += '<div class="item" style="color:'+UI.accentmcolor.lighten(0.3).getString()+';">';
 			con += '<i>it\'s empty in here...</i></div>';
 		}
-		$('#itemGrid').html(con);
-		refresh_ListStatus();
+		$('#itemgrid').html(con);
 
-		log("add_List_HTML \t END\n");
+		log("refresh_List_HTML \t END\n");
 	}
 
-	function make_ListStatus_HTML() {
+	function refresh_ListPageFooter_HTML() {
+		var con = "<button id='homebutton'>&#x276E; home &nbsp;</button>";
+		con += '<h1>' + UI.currlist.replace('_', ' ') + '</h1>';
+		con += "<div id='liststatus'></div>";
+
+		if(TEST.show_dev_buttons) con += TEST_make_Debug_Buttons();
+
+		$('#footer').html(con).css({'color': UI.accentmcolor.lighten(0.4).getString()});
+	}
+
+	function refresh_ListStatus_HTML() {
 		var sl = get_SelectedList();
 		var	stat =	'last remove: ' + timeToEnglish(sl.lastremove);
 		stat +=	'<br>';
 		stat +=	'last add: ' + timeToEnglish(sl.lastadd);
 		//stat +=	'User Agent: ' + navigator.userAgent;
-		return stat;
-	}
-
-	function refresh_ListStatus() {
-		try { document.getElementById('liststatus').innerHTML = make_ListStatus_HTML(); } catch (e){}
+		$('#liststatus').html(stat);
 	}
 
 	function list_AddNewItem(item){
@@ -390,14 +350,14 @@
 		if(typeof sl.items == 'undefined') { sl.items = []; }
 
 		if(item !== ''){
-			$('#itemGrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.accentmcolor, true));
-			$('#itemGrid .item:first span').css({color:'white'});
-			$('#itemGrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animationspeed*1.6), add_List_HTML);
+			$('#itemgrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.accentmcolor, true));
+			$('#itemgrid .item:first span').css({color:'white'});
+			$('#itemgrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animationspeed*1.6), refresh_List_HTML);
 			data_Push({"itemadd": item});
 		} else {
 			data_Get();
 		}
-		
+
 		list_FlashFocusClearInput();
 	}
 
@@ -406,13 +366,13 @@
 
 		item.slideUp(UI.animationspeed, function(){
 			data_Push({'itemremove': $.trim(inputSan(item.children('*:first').html(), false))});
-			add_List_HTML();
+			refresh_List_HTML();
 			list_FlashFocusClearInput();
 		});
 	}
 
 	function list_FlashFocusClearInput() {
-		$('#itemNew').fadeTo(UI.animationspeed, 0.8).val('').fadeTo(UI.animationspeed, 1.0).focus();
+		$('#itemnew').fadeTo(UI.animationspeed, 0.8).val('').fadeTo(UI.animationspeed, 1.0).focus();
 	}
 
 	function make_Item_HTML(num, name, bgc, hideclose) {
@@ -423,7 +383,7 @@
 		var re = '<div id="item'+num+'" class="item" style="background-color:'+bgitem+';">';
 		re += '<span class="itemname" style="color:'+txtitem+';">' + name + '</span>';
 		if(!hideclose){
-			re += '<button class="removeButton" onclick="list_RemoveItem('+num+');" style="color:'+bgclose+';">&#10006;</button>';
+			re += '<button class="itemremove" onclick="list_RemoveItem('+num+');" style="color:'+bgclose+';">&#10006;</button>';
 		}
 		re += '</div>';
 
@@ -442,11 +402,6 @@
 		}
 	}
 
-	function set_SelectedList(list){
-		UI.currlist = list;
-		if(!UI.listdata[list]) UI.listdata[list] = {'items':[], 'lastremove':false, 'lastadd':false};
-		navTo_ListPage();
-	}
 
 
 
@@ -497,8 +452,8 @@
 			log('\tBranch: Got Localdata (but not cloud data)');
 			UI = got_localdata;
 			log('\tCopied got_localdata to UI:');
-			log(got_localdata);
-			log(UI);
+			// log(got_localdata);
+			// log(UI);
 		} else {
 			// Nothing saved, default to empty lists
 			log('\tBranch: No Data');
@@ -577,7 +532,7 @@
 	//	SAVE DATA ELSWHERE
 	//	=======================
 		localStorage_PushChange();
-		
+
 		if(cloudstorageserverurl){
 			cloudStorage_PushChange();
 			if(!UI.syncstate.cloudstorage){
@@ -734,7 +689,7 @@
 	function TEST_make_Debug_Buttons() {
 		var re = '<br><br>';
 		re += '<style>.devbutton { font-size:.6em; margin-right:24px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>';
-		re += '<button class="devbutton" onclick="UI.currlist? navTo_ListPage() : navTo_HomePage();">Soft Refresh</button>';
+		re += '<button class="devbutton" onclick="navigate(UI.currlist);">Soft Refresh</button>';
 		re += '<button class="devbutton" onclick="localStorage.removeItem(\'Listo_Data\');">Clear Local Storage</button>';
 		re += '<button class="devbutton" onclick="console.log(UI);">Dump UI Variable</button>';
 		re += '<button class="devbutton" onclick="TEST.disable_local = !TEST.disable_local; refresh_SyncStatus(); log(\'TEST.disable_local = \' + TEST.disable_local);">Toggle Local Storage</button>';
@@ -743,5 +698,19 @@
 	}
 
 	function log(x) {
+		TEST.console_entries.push(x);
 		if(TEST.console_log) console.log(x);
+	}
+
+	function dumpErrorInfo(message, url, line) {
+		var re = '<br><h1>Looks like something went wrong.  Oops</h1><textarea style="background-color:white; color:black; font-size:20px; font-family:monospace; width:80%; height:80%;">';
+
+		re += 'MSG:\t' + message + '\n';
+		re += 'LINE:\t' + line + '\n';
+		for(var i=0; i<TEST.console_entries.length; i++){
+			re += ''+i+'\t'+TEST.console_entries[i]+'\n';
+		}
+
+		re += '</textarea>';
+		document.getElementById('wrapper').innerHTML += re;
 	}
