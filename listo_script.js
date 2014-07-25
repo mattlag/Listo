@@ -11,7 +11,7 @@
 	List names should use underscores_between_words
 	--------------------------------------------------------
 	*/
-	var listlist = ['to_do', 'groceries', 'household', 'online'];
+	var listlist = ['to_do', 'groceries', 'for_the_house', 'online'];
 
 
 	/*
@@ -104,11 +104,12 @@
 
 		// Page Content
 		UI.w = $('#wrapper');
-		refresh_HomePage_HTML();
 		var bk = document.location.href.split('?list=')[1];
 
 		if(listlist.indexOf(bk) > -1){
 			navigate(bk.split('?color=')[0]);
+		} else {
+			navigate();
 		}
 
 		refresh_SyncStatus();
@@ -180,7 +181,7 @@
 			con += 'tabindex="'+(l+1)+'" ';
 			con += 'style="cursor:pointer; background-color:'+bgcolor+'; color:'+txcolor+';" ';
 			con += 'onclick="navigate(\''+lname+'\');">';
-			con += '<span class="listname">'+lname.replace('_', '&nbsp;')+'</span>';
+			con += '<span class="listname">'+lname.replace(/_/gi, '&nbsp;')+'</span>';
 			if(listnum) con += '<span class="listcount" style="background-color:'+countbgcolor+';"><span style="color:'+bgcolor+';">'+listnum+'</span></span>';
 			con += '</div>';
 		});
@@ -328,7 +329,7 @@
 
 	function refresh_ListPageFooter_HTML() {
 		var con = "<button id='homebutton'>&#x276E; home &nbsp;</button>";
-		con += '<h1>' + UI.currlist.replace('_', ' ') + '</h1>';
+		con += '<h1>' + UI.currlist.replace(/_/gi, ' ') + '</h1>';
 		con += "<div id='liststatus'></div>";
 
 		if(TEST.show_dev_buttons) con += TEST_make_Debug_Buttons();
