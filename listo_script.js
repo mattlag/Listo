@@ -64,8 +64,7 @@
 		'accentmcolor' : {},
 		'syncstate' : {'variable':false, 'localstorage':false, 'cloudstorage':false},
 		'unsync' : [],
-		'w': false,
-		'animationspeed' : 500
+		'w': false
 	};
 
 	// Test & Debug Switches
@@ -122,6 +121,7 @@
 		log('\tto: ' + (list? list : 'homepage'));
 
 		var dir = 1;
+		var animationspeed = 400;
 
 		if(list){
 			UI.currlist = list;
@@ -136,15 +136,19 @@
 		UI.w.css({'overflow': 'hidden'});
 		UI.w.animate(
 			{'left': (2000*dir), 'opacity': 0},
-			{'duration': 777, 'complete':
+			{'duration': animationspeed, 'complete':
 				function(){
 					dir*=-1;
 					UI.currlist ? refresh_ListPage_HTML() : refresh_HomePage_HTML();
-					UI.w.css({'left': (2000*dir)})
-					.animate({'left': 0, 'opacity': 1}, {'duration': 777});
+					UI.w.css({'left': (2000*dir), 'overflow': 'hidden'})
+					.animate({'scrollTop': 0}, 1)
+					.animate({'left': 0, 'opacity': 1}, {'duration': animationspeed, 'complete':
+						function(){
+							UI.w.css({'overflow-y': 'scroll'});
+						}
+					});
 				}
 			});
-		UI.w.css({'overflow-y': 'scroll'});
 
 		log('navigate \t END\n');
 	}
