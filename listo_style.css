@@ -30,6 +30,7 @@ button:visited {
 #settingspage {
 	display: block;
 	font-size: 4vh;
+	width:100%;
 	width: 100vw;
 	height: 100vh;
 	position: absolute;
@@ -44,6 +45,10 @@ button:visited {
 	left: 2000px;
 }
 
+#homepage { z-index: 100 }
+#listpage { z-index: 200 }
+#settingspage { z-index: 300 }
+
 #itemgrid {
 	width: 100%;
 }
@@ -54,6 +59,13 @@ button:visited {
 	padding: 1vh 0vh 1vh 2vh;
 	font-size: 4vh;
 	border: 0;
+	z-index: 250;
+}
+
+#emptyinhere {
+	position: absolute;
+	top: 7vh;
+	z-index: 200;
 }
 
 .itemname {

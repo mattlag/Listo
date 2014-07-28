@@ -69,7 +69,7 @@
 		'currlist' : false,
 		'accentmcolor' : {},
 		'defaultaccentcolorname' : 'blue',
-		'animationspeed' : 1000
+		'animationspeed' : 200
 	};
 
 	// Test & Debug Switches
@@ -131,7 +131,10 @@
 			UI.currlist = list;
 			if(!USER.listdata[list]) USER.listdata[list] = {'items':[], 'lastremove':false, 'lastadd':false};
 			refresh_ListPage_HTML();
-			$('#listpage').slideLeft();
+			$('#homepage').css({'left': '0px'});
+			$('#listpage')
+				.css({'left' : '2000px'})
+				.slideLeft();
 		} else {
 			UI.currlist = false;
 			refresh_HomePage_HTML();
@@ -147,7 +150,7 @@
 	$.fn.slideLeft = function(speed, fn) {
 		return $(this).animate(
 			{'left' : '0px'},
-			speed || UI.animationspeed,
+			speed || (UI.animationspeed*2),
 			function() { if($.isFunction(fn)) fn.call(this); }
 		);
 	};
@@ -155,7 +158,7 @@
 	$.fn.slideRight = function(speed, fn) {
 		return $(this).animate(
 			{'left' : '2000px'},
-			speed || UI.animationspeed,
+			speed || (UI.animationspeed*2),
 			function() { if($.isFunction(fn)) fn.call(this); }
 		);
 	};
@@ -323,7 +326,7 @@
 				con = (make_Item_HTML(i, sl.items[i], UI.accentmcolor.setLightness(((i+1)*incl + UI.accentmcolor.getLightness()))) + con);
 			});
 		} else {
-			con += '<div class="item" style="color:'+UI.accentmcolor.lighten(0.3).getString()+';">';
+			con += '<div class="item" id="emptyinhere" style="color:'+UI.accentmcolor.lighten(0.2).getString()+';">';
 			con += '<i>it\'s empty in here...</i></div>';
 		}
 		$('#itemgrid').html(con);
@@ -359,9 +362,10 @@
 		if(typeof sl.items == 'undefined') { sl.items = []; }
 
 		if(item !== ''){
+			$('#emptyinhere').animate({'opacity' : 0}, (UI.animationspeed/4));
 			$('#itemgrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.accentmcolor, true));
 			$('#itemgrid .item:first span').css({color:'white'});
-			$('#itemgrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animationspeed*1.6), refresh_List_HTML);
+			$('#itemgrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animationspeed*1.2), refresh_List_HTML);
 			data_Push({"itemadd": item});
 		} else {
 			data_Get();
@@ -623,7 +627,7 @@
 
 
 		if(typeof window.history.pushState == 'function') window.history.pushState('', p_title, p_info);
-		document.title = p_title;
+		document.title = p_title.replace(/_/gi, ' ');
 		// log('updateURL\t END');
 	}
 
