@@ -72,6 +72,10 @@ button:visited {
 	margin-right: 4vh;
 }
 
+.list:hover .listname,
+.list:focus .listname {
+	color:white;
+}
 
 .listcount {
 	height: 5vh;

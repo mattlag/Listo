@@ -64,6 +64,7 @@
 		'accentmcolor' : {},
 		'syncstate' : {'variable':false, 'localstorage':false, 'cloudstorage':false},
 		'unsync' : [],
+		'animationspeed' : 100,
 		'w': false
 	};
 
@@ -693,7 +694,7 @@
 
 	function TEST_make_Debug_Buttons() {
 		var re = '<br><br>';
-		re += '<style>.devbutton { font-size:.6em; margin-right:24px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>';
+		re += '<style>.devbutton { font-size:.6em; height: 24px; margin-right:8px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>';
 		re += '<button class="devbutton" onclick="navigate(UI.currlist);">Soft Refresh</button>';
 		re += '<button class="devbutton" onclick="localStorage.removeItem(\'Listo_Data\');">Clear Local Storage</button>';
 		re += '<button class="devbutton" onclick="console.log(UI);">Dump UI Variable</button>';
