@@ -25,15 +25,23 @@ button:visited {
 	cursor: pointer;
 }
 
-#wrapper {	
+#homepage,
+#listpage,
+#settingspage {
+	display: block;
 	font-size: 4vh;
-	overflow-x: hidden;
-	overflow-y: scroll;
-	width: 100%;
-	height: 100%;
+	width: 100vw;
+	height: 100vh;
 	position: absolute;
-	top: 0;
-	left: 0;
+	top: 0px;
+	left: 0px;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+#listpage,
+#settingspage {
+	left: 2000px;
 }
 
 #itemgrid {
@@ -95,7 +103,8 @@ button:visited {
 	top: 0.2vh;
 }
 
-#footer {
+#listfooter,
+#homefooter {
 	font-size: 2vh;
 	margin: 8vh 0vh 12vh 2vh;
 }
