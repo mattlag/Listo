@@ -21,7 +21,7 @@
 	This should be a RGB color specified as an object.
 	Theme choice will be saved locally, per client, with
 	HTML5 local storage.  It can be changed on the settings
-	page. 
+	page.
 	--------------------------------------------------------
 	*/
 	var themecolors = {
@@ -69,7 +69,9 @@
 	var UI = {
 		'current_list' : false,
 		'theme_mcolor' : {},
-		'animation_speed' : 2000
+		'animation_speed' : 200,				
+		'body' : false,
+		'homepage' : false
 	};
 
 	// Test & Debug Switches
@@ -88,16 +90,19 @@
 	$(document).ready(function(){
 		log('>>> READY \t START');
 
+		// Setup
+		UI.body = $('html, body');
+		UI.homepage = $('#homepage');
+		UI.body.scrollLeft(0);
 		data_Get();
 
 		// Accent Color
 		UI.theme_mcolor = new mColor(themecolors[USER.theme_name]).setLightness(30);
+		UI.homepage.add('#listpage').css('background-color', UI.theme_mcolor.getString());
 		log('\tDefault Accent Color: ' + USER.theme_name);
 
 		// Page Content
-		$('#homepage').add('#listpage').css('background-color', UI.theme_mcolor.getString());
-		navigate();
-		refresh_SyncStatus();
+		refresh_HomePage_HTML();
 
 		log('>>> READY \t END\n');
 	});
@@ -106,52 +111,48 @@
 		log('\nnavigate \t START');
 		log('\tto: ' + (list? list : 'homepage'));
 
+		UI.current_list = list;
+
 		if(list){
-			UI.current_list = list;
 			if(!USER.list_data[list]) USER.list_data[list] = {'items':[], 'lastremove':false, 'lastadd':false};
 			refresh_ListPage_HTML();
-			setLeft();
-			log('\tlistpage.left BEFORE SL: ' + $('#listpage').css('left'));
-			$('#listpage').slideLeft(
-				function() { 
-					log('\tlistpage.left AFTERS SL: ' + $('#listpage').css('left')); 
-				}
-			);
+			setLeftTo('#homepage');
+			slideTo('#listpage', list_FlashFocusClearInput);
 		} else {
-			UI.current_list = false;
 			refresh_HomePage_HTML();
-			$('#listpage').slideRight();
+			setLeftTo('#listpage');
+			slideTo('#homepage');
 		}
+
 
 		log('navigate \t END\n');
 	}
 
-	$.fn.slideLeft = function(fn) {
-		setLeft();
-		return $(this)
-			.css({'left' : '100%'})
-			.animate(
-				{'left' : '-=100%'},
+	function slideTo(elem, complete) {
+		log('slideTo ' + elem);
+		UI.homepage.css({'overflow' : 'hidden'});
+		elem = $(elem);
+
+		elem.scrollTop(0);
+		var leftpos = elem.offset().left;
+		
+		log('\t curr left: ' + UI.body.scrollLeft() + ' \t slide to: ' + leftpos);
+
+		UI.body.animate(
+				{'scrollLeft' : leftpos},
 				(UI.animation_speed*2),
-				function() { if($.isFunction(fn)) fn.call(this); }
+				function() {
+					UI.homepage.css({'overflow-y' : 'auto'});
+					if(complete) complete.call();
+				}
 			);
-	};
-
-	$.fn.slideRight = function(fn) {
-		setLeft();
-		return $(this)
-			.css({'left' : '0%'})
-			.animate(
-				{'left' : '+=100%'},
-				(UI.animation_speed*2),
-				function() { if($.isFunction(fn)) fn.call(this); }
-		);
-	};
-
-	function setLeft() {
-		$('body').scrollLeft(0).scrollTop(0);
 	}
 
+	function setLeftTo(elem){
+		var leftpos = $(elem).offset().left;
+		log('setLeftTo \t setting to ' + leftpos + ' for ' + elem);
+		UI.body.scrollLeft(leftpos);
+	}
 
 
 
@@ -172,7 +173,7 @@
 			var listnum = USER.list_data[lname].items.length;
 
 			con += '<div class="list" ';
-			con += 'tabindex="'+(l+1)+'" ';
+			con += 'tabindex="'+(l+2)+'" ';
 			con += 'style="cursor:pointer; background-color:'+bgcolor+'; color:'+txcolor+';" ';
 			con += 'onclick="navigate(\''+lname+'\');">';
 			con += '<span class="listname">'+lname.replace(/_/gi, '&nbsp;')+'</span>';
@@ -182,9 +183,9 @@
 
 		con += '<div id="homefooter"></div>';
 
-		$('#homepage').html(con);
+		UI.homepage.html(con);
 		$('#syncstatus').css('color', UI.theme_mcolor.lighten(0.3).getString());
-
+		UI.homepage.focus();
 		refresh_HomePageFooter_HTML();
 	}
 
@@ -275,7 +276,6 @@
 		refresh_List_HTML();
 		refresh_ListPageFooter_HTML();
 		refresh_ListStatus_HTML();
-		list_FlashFocusClearInput();
 
 		$('#itemnew').on('keypress', function(event) {
 			if ( event.which == 13 ) {
@@ -287,9 +287,7 @@
 			'backgroundColor' : "rgb(250,250,250)"
 		});
 
-		$('#homebutton').on('click', function(event) {
-			navigate();
-		}).css({
+		$('#homebutton').css({
 			'color': UI.theme_mcolor.lighten(0.4).getString(),
 			'backgroundColor' : UI.theme_mcolor.lighten(0.1).getString()
 		});
@@ -320,7 +318,7 @@
 	}
 
 	function refresh_ListPageFooter_HTML() {
-		var con = "<button id='homebutton'>&#x276E; home &nbsp;</button>";
+		var con = "<button id='homebutton' onclick='navigate(false);'>&#x276E; home &nbsp;</button>";
 		con += '<h1>' + UI.current_list.replace(/_/gi, ' ') + '</h1>';
 		con += "<div id='liststatus'></div>";
 
@@ -457,6 +455,7 @@
 			// Nothing saved, default to empty lists
 			log('\tBranch: No Data');
 			setupDefaultLists();
+			data_Push();
 		}
 		refresh_SyncStatus();
 
@@ -468,16 +467,16 @@
 		if(TEST.disable_local) return false;
 
 		try {
-			var ls = JSON.parse(localStorage.getItem('Listo_Data'));
+			var ls = JSON.parse(window.localStorage.getItem('Listo_Data'));
 			ls.sync_state.localstorage = now();
 			log('\treturning: ' + ls);
 			log('\tsync_state.localstorage: ' + ls.sync_state.localstorage);
-			log('localStorage_getData:\t END');
+			log('localStorage_getData:\t END RETURNING LS');
 			return ls;
 		} catch (e) {
 			USER.sync_state.localstorage = false;
-			log('\tCATCH sync_state.localstorage: ' + USER.sync_state.localstorage);
-			log('localStorage_getData:\t END');
+			log('\tERROR CATCH localStorage: ' + window.localStorage);
+			log('localStorage_getData:\t END RETURNING FALSE');
 			return false;
 		}
 	}
@@ -548,12 +547,17 @@
 
 	function localStorage_PushChange(){
 		USER.sync_state.localstorage = false;
+		var setresult = 'initial';
+
+		log('localStorage_PushChange');
+		log(window.localStorage);
 		if(!TEST.disable_local){
 			try {
-				localStorage.setItem('Listo_Data', JSON.stringify(USER));
+				setresult = window.localStorage.setItem('Listo_Data', JSON.stringify(USER));
 				USER.sync_state.localstorage = now();
 			} catch (e) {
 				log('localStorage_PushChange: local storage not supported.');
+				log(setresult);
 			}
 		}
 	}
@@ -660,7 +664,7 @@
 		var re = '<br><br>';
 		re += '<style>.devbutton { font-size:.6em; height: 24px; margin-right:8px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>';
 		re += '<button class="devbutton" onclick="navigate(UI.current_list);">Soft Refresh</button>';
-		re += '<button class="devbutton" onclick="localStorage.removeItem(\'Listo_Data\');">Clear Local Storage</button>';
+		re += '<button class="devbutton" onclick="window.localStorage.removeItem(\'Listo_Data\');">Clear Local Storage</button>';
 		re += '<button class="devbutton" onclick="console.log(UI);">Dump UI Variable</button>';
 		re += '<button class="devbutton" onclick="TEST.disable_local = !TEST.disable_local; refresh_SyncStatus(); log(\'TEST.disable_local = \' + TEST.disable_local);">Toggle Local Storage</button>';
 		re += '<button class="devbutton" onclick="TEST.disable_cloud = !TEST.disable_cloud; refresh_SyncStatus(); log(\'TEST.disable_cloud = \' + TEST.disable_cloud);">Toggle Cloud Storage</button>';
