@@ -69,7 +69,7 @@
 	var UI = {
 		'current_list' : false,
 		'theme_mcolor' : {},
-		'animation_speed' : 200
+		'animation_speed' : 2000
 	};
 
 	// Test & Debug Switches
@@ -95,8 +95,7 @@
 		log('\tDefault Accent Color: ' + USER.theme_name);
 
 		// Page Content
-		$('#homepage').html('HEY');
-		$('body').add('#homepage').add('#listpage').css('background-color', UI.theme_mcolor.getString());
+		$('#homepage').add('#listpage').css('background-color', UI.theme_mcolor.getString());
 		navigate();
 		refresh_SyncStatus();
 
@@ -111,37 +110,47 @@
 			UI.current_list = list;
 			if(!USER.list_data[list]) USER.list_data[list] = {'items':[], 'lastremove':false, 'lastadd':false};
 			refresh_ListPage_HTML();
-			$('#homepage').css({'left': '0px'});
-			$('#listpage')
-				.css({'left' : '2000px'})
-				.slideLeft();
+			setLeft();
+			log('\tlistpage.left BEFORE SL: ' + $('#listpage').css('left'));
+			$('#listpage').slideLeft(
+				function() { 
+					log('\tlistpage.left AFTERS SL: ' + $('#listpage').css('left')); 
+				}
+			);
 		} else {
 			UI.current_list = false;
 			refresh_HomePage_HTML();
-			$('#homepage').scrollTop(0);
 			$('#listpage').slideRight();
 		}
 
 		log('navigate \t END\n');
 	}
 
-	$.fn.slideLeft = function(speed, fn) {
-		return $(this).animate(
-			{'left' : '0px'},
-			speed || (UI.animation_speed*2),
-			function() { if($.isFunction(fn)) fn.call(this); }
+	$.fn.slideLeft = function(fn) {
+		setLeft();
+		return $(this)
+			.css({'left' : '100%'})
+			.animate(
+				{'left' : '-=100%'},
+				(UI.animation_speed*2),
+				function() { if($.isFunction(fn)) fn.call(this); }
+			);
+	};
+
+	$.fn.slideRight = function(fn) {
+		setLeft();
+		return $(this)
+			.css({'left' : '0%'})
+			.animate(
+				{'left' : '+=100%'},
+				(UI.animation_speed*2),
+				function() { if($.isFunction(fn)) fn.call(this); }
 		);
 	};
 
-	$.fn.slideRight = function(speed, fn) {
-		return $(this).animate(
-			{'left' : '2000px'},
-			speed || (UI.animation_speed*2),
-			function() { if($.isFunction(fn)) fn.call(this); }
-		);
-	};
-
-
+	function setLeft() {
+		$('body').scrollLeft(0).scrollTop(0);
+	}
 
 
 
@@ -274,18 +283,16 @@
 				list_AddNewItem(ni.val());
 			}
 		}).css({
-			color: UI.theme_mcolor.getString(),
-			backgroundColor : "rgb(250,250,250)"
+			'color': UI.theme_mcolor.getString(),
+			'backgroundColor' : "rgb(250,250,250)"
 		});
+
 		$('#homebutton').on('click', function(event) {
 			navigate();
 		}).css({
-			color: UI.theme_mcolor.lighten(0.4).getString(),
-			backgroundColor : UI.theme_mcolor.lighten(0.1).getString()
+			'color': UI.theme_mcolor.lighten(0.4).getString(),
+			'backgroundColor' : UI.theme_mcolor.lighten(0.1).getString()
 		});
-
-		// var fcolor = UI.theme_mcolor.lighten(0.3).getString();
-		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
 
 		log('refresh_ListPage_HTML \t END\n');
 	}
@@ -444,8 +451,8 @@
 			log('\tBranch: Got Localdata (but not cloud data)');
 			USER = got_localdata;
 			log('\tCopied got_localdata to USER from GOT_LOCALDATA:');
-			log(USER);
-			log(got_localdata);
+			// log(USER);
+			// log(got_localdata);
 		} else {
 			// Nothing saved, default to empty lists
 			log('\tBranch: No Data');

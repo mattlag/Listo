@@ -6,7 +6,9 @@
 
 body {
 	background-color: rgb(100,100,100);
-	overflow-x: hidden;
+	overflow-x: auto;
+	width:100%;
+	-webkit-transform-origin: 0 0;
 }
 
 h1 {
@@ -28,21 +30,23 @@ button:visited {
 #homepage,
 #listpage,
 #settingspage {
-	display: block;
 	font-size: 4vh;
 	width:100%;
 	width: 100vw;
 	height: 100vh;
 	position: absolute;
 	top: 0px;
-	left: 0px;
 	overflow-x: hidden;
 	overflow-y: auto;
 }
 
+#homepage {
+	left: 0px;
+}
+
 #listpage,
 #settingspage {
-	left: 2000px;
+	left: 100%;
 }
 
 #homepage { z-index: 100 }
