@@ -6,9 +6,10 @@
 
 	/*
 	--------------------------------------------------------
-	Lists
+	Default Lists
 	An array of list names you want to keep.
-	List names should use underscores_between_words
+	List names should use underscores_between_words.
+	What lists exist can be modified on the settings page.
 	--------------------------------------------------------
 	*/
 	var listlist = ['to_do', 'groceries', 'for_the_house', 'online'];
@@ -16,14 +17,14 @@
 
 	/*
 	--------------------------------------------------------
-	Accent Colors
+	Theme Colors
 	This should be a RGB color specified as an object.
-	To switch the accent color, append '?color=orange'
-	to the Listo URL, like:
-	www.you.com/listo/?color=orange
+	Theme choice will be saved locally, per client, with
+	HTML5 local storage.  It can be changed on the settings
+	page. 
 	--------------------------------------------------------
 	*/
-	var accentcolors = {
+	var themecolors = {
 		'red' :		{'r':130,'g':0,'b':10},
 		'orange' :	{'r':200,'g':100,'b':0},
 		'green' :	{'r':0,'g':100,'b':10},
@@ -58,18 +59,17 @@
 	*/
 	// Customized stuff the User adds
 	var USER = {
-		'listdata' : {},
-		'accentcolorname' : 'blue',
-		'syncstate' : {'variable':false, 'localstorage':false, 'cloudstorage':false},
+		'list_data' : {},
+		'theme_name' : 'blue',
+		'sync_state' : {'variable':false, 'localstorage':false, 'cloudstorage':false},
 		'unsync' : [],
 	};
 
 	// Stuff the UI needs
 	var UI = {
-		'currlist' : false,
-		'accentmcolor' : {},
-		'defaultaccentcolorname' : 'blue',
-		'animationspeed' : 200
+		'current_list' : false,
+		'theme_mcolor' : {},
+		'animation_speed' : 200
 	};
 
 	// Test & Debug Switches
@@ -91,35 +91,14 @@
 		data_Get();
 
 		// Accent Color
-		var urlcolor = document.location.href.split('?color=')[1];
-		if(urlcolor){
-			urlcolor = urlcolor.split('?')[0];
-			log("\tURL Color = " + urlcolor + " accentcolors[urlcolor] = " + JSON.stringify(accentcolors[urlcolor]));
-			if(accentcolors[urlcolor]){
-				USER.accentcolorname = urlcolor;
-				UI.accentmcolor = new mColor(accentcolors[urlcolor]).setLightness(30);
-			}
-		} else {
-			USER.accentcolorname = UI.defaultaccentcolorname;
-			UI.accentmcolor = new mColor(accentcolors[USER.accentcolorname]).setLightness(30);
-			log('\tDefault Accent Color: ' + USER.accentcolorname);
-		}
-
-		document.getElementById('homepage').innerHTML = 'HEY';
+		UI.theme_mcolor = new mColor(themecolors[USER.theme_name]).setLightness(30);
+		log('\tDefault Accent Color: ' + USER.theme_name);
 
 		// Page Content
-		$('body').add('#homepage').add('#listpage').css('background-color', UI.accentmcolor.getString());
-		var bk = document.location.href.split('?list=')[1];
-
-
-		if(listlist.indexOf(bk) > -1){
-			navigate(bk.split('?color=')[0]);
-		} else {
-			navigate();
-		}
-
+		$('#homepage').html('HEY');
+		$('body').add('#homepage').add('#listpage').css('background-color', UI.theme_mcolor.getString());
+		navigate();
 		refresh_SyncStatus();
-
 
 		log('>>> READY \t END\n');
 	});
@@ -129,21 +108,19 @@
 		log('\tto: ' + (list? list : 'homepage'));
 
 		if(list){
-			UI.currlist = list;
-			if(!USER.listdata[list]) USER.listdata[list] = {'items':[], 'lastremove':false, 'lastadd':false};
+			UI.current_list = list;
+			if(!USER.list_data[list]) USER.list_data[list] = {'items':[], 'lastremove':false, 'lastadd':false};
 			refresh_ListPage_HTML();
 			$('#homepage').css({'left': '0px'});
 			$('#listpage')
 				.css({'left' : '2000px'})
 				.slideLeft();
 		} else {
-			UI.currlist = false;
+			UI.current_list = false;
 			refresh_HomePage_HTML();
 			$('#homepage').scrollTop(0);
 			$('#listpage').slideRight();
 		}
-
-		updateURL();
 
 		log('navigate \t END\n');
 	}
@@ -151,7 +128,7 @@
 	$.fn.slideLeft = function(speed, fn) {
 		return $(this).animate(
 			{'left' : '0px'},
-			speed || (UI.animationspeed*2),
+			speed || (UI.animation_speed*2),
 			function() { if($.isFunction(fn)) fn.call(this); }
 		);
 	};
@@ -159,7 +136,7 @@
 	$.fn.slideRight = function(speed, fn) {
 		return $(this).animate(
 			{'left' : '2000px'},
-			speed || (UI.animationspeed*2),
+			speed || (UI.animation_speed*2),
 			function() { if($.isFunction(fn)) fn.call(this); }
 		);
 	};
@@ -175,15 +152,15 @@
 
 	function refresh_HomePage_HTML(){
 		var con = '';
-		var incl = (((100 - UI.accentmcolor.getLightness())*0.4) / (listlist.length + 1));
+		var incl = (((100 - UI.theme_mcolor.getLightness())*0.4) / (listlist.length + 1));
 
 		$(listlist).each(function(l){
-			var bg = UI.accentmcolor.setLightness(((listlist.length + 1) - l) *incl + UI.accentmcolor.getLightness());
+			var bg = UI.theme_mcolor.setLightness(((listlist.length + 1) - l) *incl + UI.theme_mcolor.getLightness());
 			var bgcolor = bg.getString();
 			var txcolor = bg.lighten(0.8).getString();
 			var countbgcolor = bg.lighten(0.15).getString();
 			var lname = listlist[l];
-			var listnum = USER.listdata[lname].items.length;
+			var listnum = USER.list_data[lname].items.length;
 
 			con += '<div class="list" ';
 			con += 'tabindex="'+(l+1)+'" ';
@@ -197,7 +174,7 @@
 		con += '<div id="homefooter"></div>';
 
 		$('#homepage').html(con);
-		$('#syncstatus').css('color', UI.accentmcolor.lighten(0.3).getString());
+		$('#syncstatus').css('color', UI.theme_mcolor.lighten(0.3).getString());
 
 		refresh_HomePageFooter_HTML();
 	}
@@ -209,17 +186,17 @@
 
 		if(TEST.show_dev_buttons) con += TEST_make_Debug_Buttons();
 
-		$('#homefooter').html(con).css({'color': UI.accentmcolor.lighten(0.4).getString()});
+		$('#homefooter').html(con).css({'color': UI.theme_mcolor.lighten(0.4).getString()});
 	}
 
 	function make_ThemeChooser_HTML() {
 		var re = '';
-		re += make_ThemeChooser_Button(USER.accentcolorname);
+		re += make_ThemeChooser_Button(USER.theme_name);
 		re += '<div id="themechoices">';
 
-		for(var c in accentcolors){
-			if(accentcolors.hasOwnProperty(c)){
-				if(c !== USER.accentcolorname){
+		for(var c in themecolors){
+			if(themecolors.hasOwnProperty(c)){
+				if(c !== USER.theme_name){
 					re += make_ThemeChooser_Button(c);
 				}
 			}
@@ -230,7 +207,7 @@
 	}
 
 	function make_ThemeChooser_Button(name) {
-		var mc = new mColor(accentcolors[name]).setLightness(30);
+		var mc = new mColor(themecolors[name]).setLightness(30);
 		var bgcolor = mc.lighten(0.05).getString();
 		var txtcolor = mc.lighten(0.3).getString();
 		var re = '<button class="themechooserbutton" ';
@@ -238,27 +215,27 @@
 		re += 'onclick="selectTheme(\''+name+'\');" ';
 		re += '>';
 		re += name;
-		if(USER.accentcolorname === name) re += ' theme';
+		if(USER.theme_name === name) re += ' theme';
 		re += '</button>';
 
 		return re;
 	}
 
 	function selectTheme(newtheme){
-		if(USER.accentcolorname === newtheme){
+		if(USER.theme_name === newtheme){
 			$('#themechoices').toggle();
 		} else {
-			USER.accentcolorname = newtheme;
-			updateURL();
+			USER.theme_name = newtheme;
+			data_Push();
 			location.reload();
 		}
 	}
 
 	function make_SyncStatus_HTML() {
 		var re = '';
-		re += 'local storage: ' + timeToEnglish(USER.syncstate.localstorage);
+		re += 'local storage: ' + timeToEnglish(USER.sync_state.localstorage);
 		re += '<br>';
-		re += 'cloud storage: ' + timeToEnglish(USER.syncstate.cloudstorage);
+		re += 'cloud storage: ' + timeToEnglish(USER.sync_state.cloudstorage);
 		return re;
 	}
 
@@ -297,17 +274,17 @@
 				list_AddNewItem(ni.val());
 			}
 		}).css({
-			color: UI.accentmcolor.getString(),
+			color: UI.theme_mcolor.getString(),
 			backgroundColor : "rgb(250,250,250)"
 		});
 		$('#homebutton').on('click', function(event) {
 			navigate();
 		}).css({
-			color: UI.accentmcolor.lighten(0.4).getString(),
-			backgroundColor : UI.accentmcolor.lighten(0.1).getString()
+			color: UI.theme_mcolor.lighten(0.4).getString(),
+			backgroundColor : UI.theme_mcolor.lighten(0.1).getString()
 		});
 
-		// var fcolor = UI.accentmcolor.lighten(0.3).getString();
+		// var fcolor = UI.theme_mcolor.lighten(0.3).getString();
 		// if(UI.mobile) $('#wrapper').css('overflow-y' , 'scroll');
 
 		log('refresh_ListPage_HTML \t END\n');
@@ -320,14 +297,14 @@
 		log('\tSelected List Items: ' + JSON.stringify(sl.items));
 		// List Items
 		var con = '';
-		var incl = (((100 - UI.accentmcolor.getLightness())*0.4) / (sl.items.length + 1));
+		var incl = (((100 - UI.theme_mcolor.getLightness())*0.4) / (sl.items.length + 1));
 
 		if(sl.items.length){
 			$(sl.items).each(function(i) {
-				con = (make_Item_HTML(i, sl.items[i], UI.accentmcolor.setLightness(((i+1)*incl + UI.accentmcolor.getLightness()))) + con);
+				con = (make_Item_HTML(i, sl.items[i], UI.theme_mcolor.setLightness(((i+1)*incl + UI.theme_mcolor.getLightness()))) + con);
 			});
 		} else {
-			con += '<div class="item" id="emptyinhere" style="color:'+UI.accentmcolor.lighten(0.2).getString()+';">';
+			con += '<div class="item" id="emptyinhere" style="color:'+UI.theme_mcolor.lighten(0.2).getString()+';">';
 			con += '<i>it\'s empty in here...</i></div>';
 		}
 		$('#itemgrid').html(con);
@@ -337,12 +314,12 @@
 
 	function refresh_ListPageFooter_HTML() {
 		var con = "<button id='homebutton'>&#x276E; home &nbsp;</button>";
-		con += '<h1>' + UI.currlist.replace(/_/gi, ' ') + '</h1>';
+		con += '<h1>' + UI.current_list.replace(/_/gi, ' ') + '</h1>';
 		con += "<div id='liststatus'></div>";
 
 		if(TEST.show_dev_buttons) con += TEST_make_Debug_Buttons();
 
-		$('#listfooter').html(con).css({'color': UI.accentmcolor.lighten(0.4).getString()});
+		$('#listfooter').html(con).css({'color': UI.theme_mcolor.lighten(0.4).getString()});
 	}
 
 	function refresh_ListStatus_HTML() {
@@ -363,10 +340,10 @@
 		if(typeof sl.items == 'undefined') { sl.items = []; }
 
 		if(item !== ''){
-			$('#emptyinhere').animate({'opacity' : 0}, (UI.animationspeed/4));
-			$('#itemgrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.accentmcolor, true));
+			$('#emptyinhere').animate({'opacity' : 0}, (UI.animation_speed/4));
+			$('#itemgrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.theme_mcolor, true));
 			$('#itemgrid .item:first span').css({color:'white'});
-			$('#itemgrid .item:first').css({backgroundColor: UI.accentmcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animationspeed*1.2), refresh_List_HTML);
+			$('#itemgrid .item:first').css({backgroundColor: UI.theme_mcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animation_speed*1.2), refresh_List_HTML);
 			data_Push({"itemadd": item});
 		} else {
 			data_Get();
@@ -378,7 +355,7 @@
 	function list_RemoveItem(i){
 		var item = $(('#item'+i));
 
-		item.slideUp(UI.animationspeed, function(){
+		item.slideUp(UI.animation_speed, function(){
 			data_Push({'itemremove': $.trim(inputSan(item.children('*:first').html(), false))});
 			refresh_List_HTML();
 			list_FlashFocusClearInput();
@@ -386,7 +363,7 @@
 	}
 
 	function list_FlashFocusClearInput() {
-		$('#itemnew').fadeTo(UI.animationspeed, 0.8).val('').fadeTo(UI.animationspeed, 1.0).focus();
+		$('#itemnew').fadeTo(UI.animation_speed, 0.8).val('').fadeTo(UI.animation_speed, 1.0).focus();
 	}
 
 	function make_Item_HTML(num, name, bgc, hideclose) {
@@ -407,12 +384,13 @@
 
 	function get_SelectedList(){
 		// log('get_SelectedList \t START');
-		// log('\tcurrlist = ' + UI.currlist + ' return = ' + JSON.stringify(USER.listdata[UI.currlist]));
+		// log('\tcurrent_list = ' + UI.current_list + ' return = ' + JSON.stringify(USER.list_data[UI.current_list]));
 
-		if(UI.currlist){
-			return USER.listdata[UI.currlist];
+		if(UI.current_list){
+			return USER.list_data[UI.current_list];
 		} else {
-			throw "Attempted to access a list while none was selected.";
+			log('get_SelectedList \t RETURNING FALSE');
+			return false;
 		}
 	}
 
@@ -449,15 +427,15 @@
 			if(uns){
 				// Recovering from a bad Cloud Sync Status, attempt to merge
 				for(var i=0; i<uns.length; i++){
-					data_Push(uns[i].updates, USER.listdata[uns[i].list]);
+					data_Push(uns[i].updates, USER.list_data[uns[i].list]);
 				}
 			}
 
 			// Now that everything is as good as can be, load appropriate data to USER
 			USER.unsync = [];
-			if(got_localdata && got_localdata.accentcolorname && got_localdata.accentcolorname !== UI.defaultaccentcolorname){
+			if(got_localdata && got_localdata.theme_name){
 				// But, respect local theme choice if there is one
-				USER.accentcolorname = got_localdata.accentcolorname;
+				USER.theme_name = got_localdata.theme_name;
 			}
 			localStorage_PushChange();
 
@@ -465,9 +443,9 @@
 			// If no Cloud Storage, fallback to Local Storage
 			log('\tBranch: Got Localdata (but not cloud data)');
 			USER = got_localdata;
-			log('\tCopied got_localdata to USER:');
-			// log(got_localdata);
-			// log(USER);
+			log('\tCopied got_localdata to USER from GOT_LOCALDATA:');
+			log(USER);
+			log(got_localdata);
 		} else {
 			// Nothing saved, default to empty lists
 			log('\tBranch: No Data');
@@ -484,14 +462,14 @@
 
 		try {
 			var ls = JSON.parse(localStorage.getItem('Listo_Data'));
-			ls.syncstate.localstorage = now();
+			ls.sync_state.localstorage = now();
 			log('\treturning: ' + ls);
-			log('\tsyncstate.localstorage: ' + ls.syncstate.localstorage);
+			log('\tsync_state.localstorage: ' + ls.sync_state.localstorage);
 			log('localStorage_getData:\t END');
 			return ls;
 		} catch (e) {
-			USER.syncstate.localstorage = false;
-			log('\tCATCH syncstate.localstorage: ' + USER.syncstate.localstorage);
+			USER.sync_state.localstorage = false;
+			log('\tCATCH sync_state.localstorage: ' + USER.sync_state.localstorage);
 			log('localStorage_getData:\t END');
 			return false;
 		}
@@ -507,10 +485,10 @@
 
 		if(clouddata){
 			clouddata = JSON.parse(clouddata);
-			clouddata.syncstate.cloudstorage = now();
+			clouddata.sync_state.cloudstorage = now();
 			return clouddata;
 		} else {
-			USER.syncstate.cloudstorage = false;
+			USER.sync_state.cloudstorage = false;
 			return false;
 		}
 	}
@@ -529,7 +507,7 @@
 		if(updates.itemadd){
 			list.items.push(updates.itemadd);
 			list.lastadd = now();
-			USER.syncstate.variable = now();
+			USER.sync_state.variable = now();
 		}
 
 		if(updates.itemremove){
@@ -537,7 +515,7 @@
 			if(ai > -1){
 				list.items.splice(ai, 1);
 				list.lastremove = now();
-				USER.syncstate.variable = now();
+				USER.sync_state.variable = now();
 			}
 		}
 
@@ -549,9 +527,9 @@
 
 		if(cloudstorageserverurl){
 			cloudStorage_PushChange();
-			if(!USER.syncstate.cloudstorage){
+			if(!USER.sync_state.cloudstorage){
 				// Failed to sync to the cloud, try to save locally for later
-				USER.unsync.push({'list':UI.currlist, 'updates':updates});
+				USER.unsync.push({'list':UI.current_list, 'updates':updates});
 				localStorage_PushChange();
 				log('Unable to Push to the cloud, unsync is now');
 				log(USER.unsync);
@@ -562,11 +540,11 @@
 	}
 
 	function localStorage_PushChange(){
-		USER.syncstate.localstorage = false;
+		USER.sync_state.localstorage = false;
 		if(!TEST.disable_local){
 			try {
 				localStorage.setItem('Listo_Data', JSON.stringify(USER));
-				USER.syncstate.localstorage = now();
+				USER.sync_state.localstorage = now();
 			} catch (e) {
 				log('localStorage_PushChange: local storage not supported.');
 			}
@@ -579,9 +557,9 @@
 		// Save JSON data via AJAX or whatever
 
 		if(success && !TEST.disable_cloud){
-			USER.syncstate.cloudstorage = now();
+			USER.sync_state.cloudstorage = now();
 		} else {
-			USER.syncstate.cloudstorage = false;
+			USER.sync_state.cloudstorage = false;
 		}
 	}
 
@@ -602,35 +580,6 @@
 	// ----------------
 	// Helper Functions
 	// ----------------
-
-	function updateURL(){
-		// log('updateURL\t START');
-		// Color
-		var p_info = '?';
-		var p_title = 'Listo!';
-
-		if(UI.currlist){
-			// on a list page
-			p_title = (UI.currlist.replace(' ', '') + ' Listo!');
-			if(USER.accentcolorname === UI.defaultaccentcolorname){
-				// default color
-				p_info = ('?list=' + UI.currlist);
-			} else {
-				// custom color
-				p_info = ('?list=' + UI.currlist + '?color=' + USER.accentcolorname);
-			}
-		} else {
-			// on the homepage
-			if(USER.accentcolorname !== UI.defaultaccentcolorname){
-				p_info = ('?color=' + USER.accentcolorname);
-			}
-		}
-
-
-		if(typeof window.history.pushState == 'function') window.history.pushState('', p_title, p_info);
-		document.title = p_title.replace(/_/gi, ' ');
-		// log('updateURL\t END');
-	}
 
 	function now() {return (new Date().valueOf());}
 
@@ -687,7 +636,7 @@
 	function setupDefaultLists(){
 		for(var l=0; l<listlist.length; l++){
 			var lname = listlist[l];
-			if(!USER.listdata[lname]) USER.listdata[lname] = {'items':[], 'lastadd':false, 'lastremove':false};
+			if(!USER.list_data[lname]) USER.list_data[lname] = {'items':[], 'lastadd':false, 'lastremove':false};
 		}
 	}
 
@@ -703,7 +652,7 @@
 	function TEST_make_Debug_Buttons() {
 		var re = '<br><br>';
 		re += '<style>.devbutton { font-size:.6em; height: 24px; margin-right:8px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>';
-		re += '<button class="devbutton" onclick="navigate(UI.currlist);">Soft Refresh</button>';
+		re += '<button class="devbutton" onclick="navigate(UI.current_list);">Soft Refresh</button>';
 		re += '<button class="devbutton" onclick="localStorage.removeItem(\'Listo_Data\');">Clear Local Storage</button>';
 		re += '<button class="devbutton" onclick="console.log(UI);">Dump UI Variable</button>';
 		re += '<button class="devbutton" onclick="TEST.disable_local = !TEST.disable_local; refresh_SyncStatus(); log(\'TEST.disable_local = \' + TEST.disable_local);">Toggle Local Storage</button>';
@@ -726,5 +675,5 @@
 		}
 
 		re += '</textarea>';
-		document.body.innerHTML += re;
+		document.getElementsByTagName('body').innerHTML += re;
 	}
