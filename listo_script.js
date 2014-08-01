@@ -105,11 +105,12 @@
 			log('\tDefault Accent Color: ' + USER.accentcolorname);
 		}
 
-		$('body').add('#homepage').add('#listpage').css('background-color', UI.accentmcolor.getString());
-		log('\tUI.animationspeed: ' + UI.animationspeed);
+		document.getElementById('homepage').innerHTML = 'HEY';
 
 		// Page Content
+		$('body').add('#homepage').add('#listpage').css('background-color', UI.accentmcolor.getString());
 		var bk = document.location.href.split('?list=')[1];
+
 
 		if(listlist.indexOf(bk) > -1){
 			navigate(bk.split('?color=')[0]);
@@ -725,5 +726,5 @@
 		}
 
 		re += '</textarea>';
-		document.getElementById('wrapper').innerHTML += re;
+		document.body.innerHTML += re;
 	}
