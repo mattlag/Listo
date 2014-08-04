@@ -223,8 +223,8 @@
 	function make_ThemeChooser_Button(name) {
 		var mc = new mColor(themecolors[name]).setLightness(30);
 		var bgcolor = mc.lighten(0.05).getString();
-		var txtcolor = mc.lighten(0.3).getString();
-		var re = '<button class="themechooserbutton" ';
+		var txtcolor = mc.lighten(0.5).getString();
+		var re = '<button class="footerbutton" ';
 		re += 'style="background-color:'+bgcolor+'; color:'+txtcolor+';" ';
 		re += 'onclick="selectTheme(\''+name+'\');" ';
 		re += '>';
@@ -251,13 +251,31 @@
 		if(USER.sync_state.cloudstorage){
 			re += '<tr><td class="leftcol">saved:</td><td>' + timeToEnglish(USER.sync_state.cloudstorage) + '</td></tr>';
 		} else if (USER.sync_state.localstorage){
-			re += '<tr><td style="width:10%;">saved locally:</td><td>' + timeToEnglish(USER.sync_state.localstorage) + '</td></tr>';
-			re += '<tr><td colspan="2">waiting for internet to sync with the cloud</td></tr>';
+			re += '<tr><td class="leftcol">saved locally:</td><td>' + timeToEnglish(USER.sync_state.localstorage) + '</td></tr>';
+			if(cloudstorageserverurl){
+				re += '<tr><td colspan="2">waiting for internet to sync with the cloud</td></tr>';
+				re += '<tr><td colspan="2">' + make_Refresh_Button() + '</td></tr>';
+			}
 		} else {
 			re += '<tr><td>could not save</td></tr>';
 			re += '<tr><td>data will be lost when this tab is closed</td></tr>';
+			if(cloudstorageserverurl){
+				re += '<tr><td colspan="2">' + make_Refresh_Button() + '</td></tr>';
+			}
 		}
 		re += '</table>';
+		return re;
+	}
+
+	function make_Refresh_Button() {
+		var bgcolor = UI.theme_mcolor.lighten(0.05).getString();
+		var txtcolor = UI.theme_mcolor.lighten(0.3).getString();
+		var re = '<button class="footerbutton" ';
+		re += 'style="background-color:'+bgcolor+'; color:'+txtcolor+';" ';
+		re += 'onclick="data_Get();" ';
+		re += '>';
+		re += 'refresh';
+		re += '</button>';
 		return re;
 	}
 
@@ -382,7 +400,7 @@
 
 	function list_FlashFocusClearInput(calledby) {
 		log('list_FlashFocusClearInput \t calledby ' + (calledby || 'navigate'));
-		$('#itemnew').fadeTo(UI.animation_speed/2, 0.8).val('').fadeTo(UI.animation_speed/2, 1.0).focus();
+		$('#itemnew').fadeTo(UI.animation_speed, 0.95).val('').fadeTo(UI.animation_speed, 1.0).focus();
 	}
 
 	function make_Item_HTML(num, name, bgc, hideclose) {
