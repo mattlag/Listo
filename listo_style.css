@@ -28,35 +28,42 @@ button:visited {
 
 #homepage,
 #listpage,
-#settingspage {
-	font-size: 4vh;
-	width:100%;
-	width: 100vw;
-	height: 100vh;
+#settingspage,
+#errorpage {
+	/* Old */
+	height: 100%;
+	width: 100%;
 	position: absolute;
 	top: 0px;
 	overflow-x: hidden;
 	overflow-y: auto;
+
+	/* Fancy */
+	font-size: 4vh;
+	width: 100vw;
+	height: 100vh;
 }
 
 #homepage {
-	left: 0px;
+	left: 0vw;
+	z-index: 100;
 }
 
-#listpage,
+#listpage {
+	left: 100vw;
+	z-index: 200;
+}
 #settingspage {
-	left: 100%;
+	left: 200vw;
+	z-index: 300;
 }
 
-#homepage { z-index: 100 }
-#listpage { z-index: 200 }
-#settingspage { z-index: 300 }
 
 #itemgrid {
 	width: 100%;
 }
 
-#itemnew, 
+#itemnew,
 .item {
 	width: 100%;
 	padding: 1vh 0vh 1vh 2vh;

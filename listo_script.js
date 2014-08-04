@@ -69,7 +69,7 @@
 	var UI = {
 		'current_list' : false,
 		'theme_mcolor' : {},
-		'animation_speed' : 200,				
+		'animation_speed' : 60,
 		'body' : false,
 		'homepage' : false
 	};
@@ -90,6 +90,8 @@
 	$(document).ready(function(){
 		log('>>> READY \t START');
 
+		$(window).on('error', dumpErrorInfo);
+
 		// Setup
 		UI.body = $('html, body');
 		UI.homepage = $('#homepage');
@@ -103,6 +105,7 @@
 
 		// Page Content
 		refresh_HomePage_HTML();
+		slideTo('#homepage');
 
 		log('>>> READY \t END\n');
 	});
@@ -117,7 +120,8 @@
 			if(!USER.list_data[list]) USER.list_data[list] = {'items':[], 'lastremove':false, 'lastadd':false};
 			refresh_ListPage_HTML();
 			setLeftTo('#homepage');
-			slideTo('#listpage', list_FlashFocusClearInput);
+			slideTo('#listpage');
+			list_FlashFocusClearInput();
 		} else {
 			refresh_HomePage_HTML();
 			setLeftTo('#listpage');
@@ -131,11 +135,13 @@
 	function slideTo(elem, complete) {
 		log('slideTo ' + elem);
 		UI.homepage.css({'overflow' : 'hidden'});
-		elem = $(elem);
+		var leftpos = 0;
 
-		elem.scrollTop(0);
-		var leftpos = elem.offset().left;
-		
+		if(elem !== '#homepage'){
+			leftpos = $(elem).offset().left;
+		}
+		$(elem).scrollTop(0);
+
 		log('\t curr left: ' + UI.body.scrollLeft() + ' \t slide to: ' + leftpos);
 
 		UI.body.animate(
@@ -354,21 +360,22 @@
 			data_Get();
 		}
 
-		list_FlashFocusClearInput();
+		list_FlashFocusClearInput('list_AddNewItem');
 	}
 
 	function list_RemoveItem(i){
 		var item = $(('#item'+i));
 
-		item.slideUp(UI.animation_speed, function(){
+		item.slideUp(UI.animation_speed*2, function(){
 			data_Push({'itemremove': $.trim(inputSan(item.children('*:first').html(), false))});
 			refresh_List_HTML();
-			list_FlashFocusClearInput();
+			list_FlashFocusClearInput('list_RemoveItem');
 		});
 	}
 
-	function list_FlashFocusClearInput() {
-		$('#itemnew').fadeTo(UI.animation_speed, 0.8).val('').fadeTo(UI.animation_speed, 1.0).focus();
+	function list_FlashFocusClearInput(calledby) {
+		log('list_FlashFocusClearInput \t calledby ' + (calledby || 'navigate'));
+		$('#itemnew').fadeTo(UI.animation_speed/2, 0.8).val('').fadeTo(UI.animation_speed/2, 1.0).focus();
 	}
 
 	function make_Item_HTML(num, name, bgc, hideclose) {
@@ -676,15 +683,15 @@
 		if(TEST.console_log) console.log(x);
 	}
 
-	function dumpErrorInfo(message, url, line) {
-		var re = '<br><h1>Looks like something went wrong.  Oops</h1><textarea style="background-color:white; color:black; font-size:20px; font-family:monospace; width:80%; height:80%;">';
+	function dumpErrorInfo() {
+		log('dumpErrorInfo');
 
-		re += 'MSG:\t' + message + '\n';
-		re += 'LINE:\t' + line + '\n';
+		var re = '<br><h3>Looks like something went wrong.  Oops</h3><textarea style="background-color:white; color:black; font-size:20px; font-family:monospace; width:80%; height:80%;">';
+
 		for(var i=0; i<TEST.console_entries.length; i++){
 			re += ''+i+'\t'+TEST.console_entries[i]+'\n';
 		}
 
 		re += '</textarea>';
-		document.getElementsByTagName('body').innerHTML += re;
+		document.getElementById('homepage').innerHTML += re;
 	}
