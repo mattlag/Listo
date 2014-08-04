@@ -7,14 +7,17 @@
 body {
 	background-color: rgb(100,100,100);
 	overflow: hidden;
-	width:100%;
+	width: 100%;
+	height: 100%;
+	width: 100vw;
+	width: 100vh;
 }
 
 h1 {
 	font-size: 10vh;
 	font-style: italic;
 	font-weight: normal;
-	margin-top: 4vh;
+	margin: 4vh 0vh 1vh 0vh;
 }
 
 button,
@@ -57,7 +60,6 @@ button:visited {
 	left: 200vw;
 	z-index: 300;
 }
-
 
 #itemgrid {
 	width: 100%;
@@ -128,22 +130,26 @@ button:visited {
 #listfooter,
 #homefooter {
 	font-size: 2vh;
-	margin: 8vh 0vh 12vh 2vh;
+	margin: 8vh 2vh 12vh 2vh;
+}
+
+#listfooter {
+	text-align: right;
 }
 
 #liststatus,
 #syncstatus,
 #themestatus {
-	padding: 2vh 0vh 0vh 0vh;
+	padding: 0vh 0vh 2vh 0vh;
 }
 
 #homebutton {
 	padding: 2vh;
 	width: 40vh;
-	text-align: left;
-	border-top-right-radius: 1vh;
-	border-bottom-right-radius: 1vh;
-	margin-left: -2vh;
+	text-align: right;
+	border-top-left-radius: 1vh;
+	border-bottom-left-radius: 1vh;
+	margin-right: -2vh;
 	font-size: 3vh;
 }
 

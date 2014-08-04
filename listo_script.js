@@ -70,7 +70,7 @@
 		'current_list' : false,
 		'theme_mcolor' : {},
 		'animation_speed' : 60,
-		'body' : false,
+		'listpage' : false,
 		'homepage' : false
 	};
 
@@ -93,9 +93,8 @@
 		$(window).on('error', dumpErrorInfo);
 
 		// Setup
-		UI.body = $('html, body');
 		UI.homepage = $('#homepage');
-		UI.body.scrollLeft(0);
+		UI.listpage = $('#listpage');
 		data_Get();
 
 		// Accent Color
@@ -105,7 +104,6 @@
 
 		// Page Content
 		refresh_HomePage_HTML();
-		slideTo('#homepage');
 
 		log('>>> READY \t END\n');
 	});
@@ -119,46 +117,46 @@
 		if(list){
 			if(!USER.list_data[list]) USER.list_data[list] = {'items':[], 'lastremove':false, 'lastadd':false};
 			refresh_ListPage_HTML();
-			setLeftTo('#homepage');
-			slideTo('#listpage');
-			list_FlashFocusClearInput();
+			navTo(UI.listpage, list_FlashFocusClearInput);
 		} else {
 			refresh_HomePage_HTML();
-			setLeftTo('#listpage');
-			slideTo('#homepage');
+			navTo(UI.homepage);
 		}
 
 
 		log('navigate \t END\n');
 	}
 
-	function slideTo(elem, complete) {
-		log('slideTo ' + elem);
-		UI.homepage.css({'overflow' : 'hidden'});
-		var leftpos = 0;
+	function navTo(target, complete) {
+		log('navTo ' + target.id);
+		
+		var current = UI.listpage;
+		if(target === UI.listpage) current = UI.homepage;
+		var both = $('#homepage').add('#listpage');
+		var speed = UI.animation_speed*2;
 
-		if(elem !== '#homepage'){
-			leftpos = $(elem).offset().left;
-		}
-		$(elem).scrollTop(0);
+		both.css({'overflow' : 'hidden'});
+		target.css({'left' : '100%'});
+		current.css({'left' : '0%'});
 
-		log('\t curr left: ' + UI.body.scrollLeft() + ' \t slide to: ' + leftpos);
+		current.animate(
+			{'left' : '-=100%'}, speed,
+			function() { current.scrollTop(0); }
+		);
 
-		UI.body.animate(
-				{'scrollLeft' : leftpos},
-				(UI.animation_speed*2),
-				function() {
-					UI.homepage.css({'overflow-y' : 'auto'});
-					if(complete) complete.call();
-				}
-			);
+
+		target.animate(
+			{'left' : '-=100%'}, speed,
+			function(){
+				both.css({'overflow-y' : 'auto'});
+				target.scrollTop(0);
+				if(complete) complete.call();
+			}
+		);
+
+
 	}
 
-	function setLeftTo(elem){
-		var leftpos = $(elem).offset().left;
-		log('setLeftTo \t setting to ' + leftpos + ' for ' + elem);
-		UI.body.scrollLeft(leftpos);
-	}
 
 
 
@@ -324,7 +322,7 @@
 	}
 
 	function refresh_ListPageFooter_HTML() {
-		var con = "<button id='homebutton' onclick='navigate(false);'>&#x276E; home &nbsp;</button>";
+		var con = "<button id='homebutton' onclick='navigate(false);'>home &ensp; &#x276F;</button>";
 		con += '<h1>' + UI.current_list.replace(/_/gi, ' ') + '</h1>';
 		con += "<div id='liststatus'></div>";
 
