@@ -95,7 +95,7 @@
 		// Setup
 		UI.homepage = $('#homepage');
 		UI.listpage = $('#listpage');
-		data_Get();
+		data_Sync();
 
 		// Accent Color
 		UI.theme_mcolor = new mColor(themecolors[USER.theme_name]).setLightness(30);
@@ -272,7 +272,7 @@
 		var txtcolor = UI.theme_mcolor.lighten(0.3).getString();
 		var re = '<button class="footerbutton" ';
 		re += 'style="background-color:'+bgcolor+'; color:'+txtcolor+';" ';
-		re += 'onclick="data_Get();" ';
+		re += 'onclick="data_Sync();" ';
 		re += '>';
 		re += 'refresh';
 		re += '</button>';
@@ -382,7 +382,7 @@
 			data_Push({"itemadd": item});
 
 		} else {
-			data_Get();
+			data_Sync();
 		}
 
 		list_FlashFocusClearInput('list_AddNewItem');
@@ -448,10 +448,17 @@
 	// Data Functions: GET
 	// --------------------
 
-	function data_Get() {
+	function data_Sync() {
+		if(!cloudstorageserverurl || TEST.disable_cloud){
+			data_Got({});
+		} else {
+			ax(USER);
+		}
+	}
+
+	function data_Got(got_clouddata) {
 		// Set default  data
-		log('data_Get\t START');
-		var got_clouddata = cloudStorage_getData();
+		log('data_Got\t START');
 		var got_localdata = localStorage_getData();
 		log('\tCloud Storage and Local Storage: ' + got_clouddata + ' ' + got_localdata);
 
@@ -491,7 +498,7 @@
 		}
 		refresh_SyncStatus();
 
-		log('data_Get\t END');
+		log('data_Got\t END');
 	}
 
 	function localStorage_getData(){
@@ -509,24 +516,6 @@
 			USER.sync_state.localstorage = false;
 			log('\tERROR CATCH localStorage: ' + window.localStorage);
 			log('localStorage_getData:\t END RETURNING FALSE');
-			return false;
-		}
-	}
-
-	function cloudStorage_getData(){
-		if(!cloudstorageserverurl) return false;
-		if(TEST.disable_cloud) return false;
-
-		var clouddata = false;
-
-		// Get JSON data via AJAX or whatever
-
-		if(clouddata){
-			clouddata = JSON.parse(clouddata);
-			clouddata.sync_state.cloudstorage = now();
-			return clouddata;
-		} else {
-			USER.sync_state.cloudstorage = false;
 			return false;
 		}
 	}
@@ -562,17 +551,7 @@
 	//	SAVE DATA ELSWHERE
 	//	=======================
 		localStorage_PushChange();
-
-		if(cloudstorageserverurl){
-			cloudStorage_PushChange();
-			if(!USER.sync_state.cloudstorage){
-				// Failed to sync to the cloud, try to save locally for later
-				USER.unsync.push({'list':UI.current_list, 'updates':updates});
-				localStorage_PushChange();
-				log('Unable to Push to the cloud, unsync is now');
-				log(USER.unsync);
-			}
-		}
+		data_Sync();
 
 		refresh_SyncStatus();
 		refresh_ListStatus_HTML();
@@ -595,20 +574,36 @@
 		}
 	}
 
-	function cloudStorage_PushChange() {
-		var success = false;
 
-		// Save JSON data via AJAX or whatever
+	function ax(pdata) {
+		$.ajax({
+			type: 'POST',
+			url:  cloudstorageserverurl,
+			data: pdata
+		})
+		.done(function(redata) {
+			redata = JSON.parse(redata);
+			log("ax: returns");
+			log(redata);
+			if(redata.sync_state.cloudstorage !== USER.sync_state.cloudstorage){
+				throw('AJAX LAG: a change was made while the AJAX request was out.');
+			}
+			if(!TEST.disable_cloud) USER.sync_state.cloudstorage = now();
 
-		if(success && !TEST.disable_cloud){
-			USER.sync_state.cloudstorage = now();
-		} else {
+			data_Got(redata);
+		})
+		.fail(function(data){
+			log("Error, AJAX failure: \n" + JSON.stringify(data));
 			USER.sync_state.cloudstorage = false;
-		}
+			USER.unsync.push({'list':UI.current_list, 'updates':updates});
+			localStorage_PushChange();
+			log('Unable to Push to the cloud, unsync is now');
+			log(USER.unsync);
+
+			data_Got({});
+			// setTimeout(function(){ ax(USER); }, 300000);
+		});
 	}
-
-
-
 
 
 
