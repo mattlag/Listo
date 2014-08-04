@@ -129,7 +129,7 @@
 
 	function navTo(target, complete) {
 		log('navTo ' + target.id);
-		
+
 		var current = UI.listpage;
 		if(target === UI.listpage) current = UI.homepage;
 		var both = $('#homepage').add('#listpage');
@@ -180,7 +180,7 @@
 			con += 'tabindex="'+(l+2)+'" ';
 			con += 'style="cursor:pointer; background-color:'+bgcolor+'; color:'+txcolor+';" ';
 			con += 'onclick="navigate(\''+lname+'\');">';
-			con += '<span class="listname">'+lname.replace(/_/gi, '&nbsp;')+'</span>';
+			con += '<span class="listname">'+lname.replace(/_/gi, ' ')+'</span>';
 			if(listnum) con += '<span class="listcount" style="background-color:'+countbgcolor+';"><span style="color:'+bgcolor+';">'+listnum+'</span></span>';
 			con += '</div>';
 		});
@@ -246,10 +246,18 @@
 	}
 
 	function make_SyncStatus_HTML() {
-		var re = '';
-		re += 'local storage: ' + timeToEnglish(USER.sync_state.localstorage);
-		re += '<br>';
-		re += 'cloud storage: ' + timeToEnglish(USER.sync_state.cloudstorage);
+		var re = '<table>';
+
+		if(USER.sync_state.cloudstorage){
+			re += '<tr><td class="leftcol">saved:</td><td>' + timeToEnglish(USER.sync_state.cloudstorage) + '</td></tr>';
+		} else if (USER.sync_state.localstorage){
+			re += '<tr><td style="width:10%;">saved locally:</td><td>' + timeToEnglish(USER.sync_state.localstorage) + '</td></tr>';
+			re += '<tr><td colspan="2">waiting for internet to sync with the cloud</td></tr>';
+		} else {
+			re += '<tr><td>could not save</td></tr>';
+			re += '<tr><td>data will be lost when this tab is closed</td></tr>';
+		}
+		re += '</table>';
 		return re;
 	}
 
@@ -333,10 +341,10 @@
 
 	function refresh_ListStatus_HTML() {
 		var sl = get_SelectedList();
-		var	stat =	'last remove: ' + timeToEnglish(sl.lastremove);
-		stat +=	'<br>';
-		stat +=	'last add: ' + timeToEnglish(sl.lastadd);
-		//stat +=	'User Agent: ' + navigator.userAgent;
+		var	stat = '<table style="float:right;">';
+		stat += '<tr><td class="leftcol">last remove:</td><td class="rightcol">' + timeToEnglish(sl.lastremove) + '</td></tr>';
+		stat +=	'<tr><td class="leftcol">last add:</td><td class="rightcol">' + timeToEnglish(sl.lastadd) + '</td></tr>';
+		stat += '</table>';
 		$('#liststatus').html(stat);
 	}
 
@@ -354,6 +362,7 @@
 			$('#itemgrid .item:first span').css({color:'white'});
 			$('#itemgrid .item:first').css({backgroundColor: UI.theme_mcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animation_speed*1.2), refresh_List_HTML);
 			data_Push({"itemadd": item});
+
 		} else {
 			data_Get();
 		}
@@ -548,6 +557,7 @@
 		}
 
 		refresh_SyncStatus();
+		refresh_ListStatus_HTML();
 	}
 
 	function localStorage_PushChange(){
@@ -668,9 +678,10 @@
 	function TEST_make_Debug_Buttons() {
 		var re = '<br><br>';
 		re += '<style>.devbutton { font-size:.6em; height: 24px; margin-right:8px; padding:8px; border:0px; border-radius:4px; color:white; background-color:slategray;}</style>';
-		re += '<button class="devbutton" onclick="navigate(UI.current_list);">Soft Refresh</button>';
+		// re += '<button class="devbutton" onclick="navigate(UI.current_list);">Soft Refresh</button>';
 		re += '<button class="devbutton" onclick="window.localStorage.removeItem(\'Listo_Data\');">Clear Local Storage</button>';
 		re += '<button class="devbutton" onclick="console.log(UI);">Dump UI Variable</button>';
+		re += '<button class="devbutton" onclick="console.log(USER);">Dump USER Variable</button>';
 		re += '<button class="devbutton" onclick="TEST.disable_local = !TEST.disable_local; refresh_SyncStatus(); log(\'TEST.disable_local = \' + TEST.disable_local);">Toggle Local Storage</button>';
 		re += '<button class="devbutton" onclick="TEST.disable_cloud = !TEST.disable_cloud; refresh_SyncStatus(); log(\'TEST.disable_cloud = \' + TEST.disable_cloud);">Toggle Cloud Storage</button>';
 		return re;

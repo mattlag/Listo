@@ -56,6 +56,7 @@ button:visited {
 	left: 100vw;
 	z-index: 200;
 }
+
 #settingspage {
 	left: 200vw;
 	z-index: 300;
@@ -65,6 +66,12 @@ button:visited {
 	width: 100%;
 }
 
+#emptyinhere {
+	position: absolute;
+	top: 7vh;
+	z-index: 200;
+}
+
 #itemnew,
 .item {
 	width: 100%;
@@ -72,12 +79,6 @@ button:visited {
 	font-size: 4vh;
 	border: 0;
 	z-index: 250;
-}
-
-#emptyinhere {
-	position: absolute;
-	top: 7vh;
-	z-index: 200;
 }
 
 .itemname {
@@ -96,7 +97,6 @@ button:visited {
 	width: 100%;
 	padding: 2vh 0vh 2vh 2vh;
 	color: white;
-	height: 16vh;
 }
 
 .listname {
@@ -133,7 +133,8 @@ button:visited {
 	margin: 8vh 2vh 12vh 2vh;
 }
 
-#listfooter {
+#listfooter,
+#liststatus {
 	text-align: right;
 }
 
@@ -143,9 +144,14 @@ button:visited {
 	padding: 0vh 0vh 2vh 0vh;
 }
 
+.leftcol {
+	text-align: right;
+	padding-right:1vh;
+}
+
 #homebutton {
 	padding: 2vh;
-	width: 40vh;
+	width: 30vh;
 	text-align: right;
 	border-top-left-radius: 1vh;
 	border-bottom-left-radius: 1vh;
