@@ -7,9 +7,8 @@
 	/*
 	--------------------------------------------------------
 	Default Lists
-	An array of list names you want to keep.
+	An array of list names you want to have.
 	List names should use underscores_between_words.
-	What lists exist can be modified on the settings page.
 	--------------------------------------------------------
 	*/
 	var list_names = ['to_do', 'groceries', 'for_the_house', 'online'];
@@ -18,13 +17,12 @@
 	/*
 	--------------------------------------------------------
 	Theme Colors
-	This should be a RGB color specified as an object.
+	A set of RGB color specified as an object.
 	Theme choice will be saved locally, per client, with
-	HTML5 local storage.  It can be changed on the settings
-	page.
+	local storage.  It can be changed on the home page.
 	--------------------------------------------------------
 	*/
-	var themecolors = {
+	var theme_colors = {
 		'red' :		{'r':130,'g':0,'b':10},
 		'orange' :	{'r':200,'g':100,'b':0},
 		'green' :	{'r':0,'g':100,'b':10},
@@ -36,18 +34,18 @@
 
 	/*
 	--------------------------------------------------------
-	cloudstorageserverurl
+	Cloud Storage Server URL
 	Listo! works fine using local HTML5 storage, but if you
 	hook it up to a server, it can persist changes in the
-	cloud.  This requires you to write a .php backend that
-	saves and serves up values via POST.
-	If you want to do that, specify the URL of the server
-	page here.
+	cloud.  This requires a .php backend that saves and 
+	serves up values via POST. If you want to do that, 
+	specify the URL of the server page here.
+	There is an example sync.php file in this project.
 	--------------------------------------------------------
 	*/
-	// var cloudstorageserverurl = false;
-	// var cloudstorageserverurl = 'http://www.yourdomain.com/listo/sync.php';
-	var cloudstorageserverurl = 'sync.php';
+	// var cloud_storage_server_url = false;
+	// var cloud_storage_server_url = 'http://www.yourdomain.com/listo/sync.php';
+	var cloud_storage_server_url = 'sync.php';
 
 
 
@@ -203,7 +201,7 @@
 		re += make_ThemeChooser_Button(USER.theme_name);
 		re += '<div id="themechoices">';
 
-		for(var c in themecolors){
+		for(var c in theme_colors){
 			if(themecolors.hasOwnProperty(c)){
 				if(c !== USER.theme_name){
 					re += make_ThemeChooser_Button(c);
@@ -248,13 +246,13 @@
 
 		} else if (UI.sync_state.localstorage && !TEST.disable_local){
 			re += '<tr><td>saved locally: &ensp;' + timeToEnglish(UI.sync_state.localstorage) + '</td>';
-			if(cloudstorageserverurl) re += '<td rowspan="2">' + make_Refresh_Button() + '</td></tr>';
+			if(cloud_storage_server_url) re += '<td rowspan="2">' + make_Refresh_Button() + '</td></tr>';
 			else re += '</tr>';
-			if(cloudstorageserverurl) re += '<tr><td>waiting for internet to sync with the cloud</td></tr>';
+			if(cloud_storage_server_url) re += '<tr><td>waiting for internet to sync with the cloud</td></tr>';
 
 		} else {
 			re += '<tr><td>could not save</td>';
-			if(cloudstorageserverurl) re += '<td rowspan="2">' + make_Refresh_Button() + '</td></tr>';
+			if(cloud_storage_server_url) re += '<td rowspan="2">' + make_Refresh_Button() + '</td></tr>';
 			else re += '</tr>';
 			re += '<tr><td>data will be lost when this tab is closed</td></tr>';
 		}
@@ -455,7 +453,7 @@
 
 	function data_Sync() {
 		log('data_Sync \t START');
-		if(!cloudstorageserverurl || TEST.disable_cloud){
+		if(!cloud_storage_server_url || TEST.disable_cloud){
 			log('\t Should have NO cloud connectivitiy, calling data_Got()');
 			data_Got();
 		} else {
@@ -639,7 +637,7 @@
 		UI.sync_state.cloudstorage = 'pending';
 		$.ajax({
 			type: 'POST',
-			url:  cloudstorageserverurl,
+			url:  cloud_storage_server_url,
 			data: {'USER' : JSON.stringify(pdata)}
 		})
 		.done(function(redata) {
