@@ -89,7 +89,7 @@
 	// -----------
 
 	$(document).ready(function(){
-		log('>>> READY \t START');
+		log('>>>>>>>>>>>>>>>>>>>>>>\n\tREADY START\n>>>>>>>>>>>>>>>>>>>>>>');
 
 		$(window).on('error', dumpErrorInfo);
 
@@ -104,14 +104,11 @@
 		setupDefaultLists();
 		data_Sync();
 
-		// Page Content
-		refresh_HomePage_HTML();
-
-		log('>>> READY \t END\n');
+		log('>>>>>>>>>>>>>>>>>>>>>>\n\tREADY END\n>>>>>>>>>>>>>>>>>>>>>>\n');
 	});
 
 	function navigate(list){
-		log('\nnavigate \t START');
+		log('||||||||||||||||||||||||||||\n\tnavigate START');
 		log('\tto: ' + (list? list : 'homepage'));
 
 		UI.current_list = list;
@@ -124,8 +121,7 @@
 			navTo(UI.homepage);
 		}
 
-
-		log('navigate \t END\n');
+		log('\tnavigate END\n||||||||||||||||||||||||||||');
 	}
 
 	function navTo(target, complete) {
@@ -247,21 +243,22 @@
 	function make_SyncStatus_HTML() {
 		var re = '<table>';
 
-		if(UI.sync_state.cloudstorage){
+		if(UI.sync_state.cloudstorage && !TEST.disable_cloud){
 			re += '<tr><td class="leftcol">saved:</td><td>' + timeToEnglish(UI.sync_state.cloudstorage) + '</td></tr>';
-		} else if (UI.sync_state.localstorage){
-			re += '<tr><td class="leftcol">saved locally:</td><td>' + timeToEnglish(UI.sync_state.localstorage) + '</td></tr>';
-			if(cloudstorageserverurl){
-				re += '<tr><td colspan="2">waiting for internet to sync with the cloud</td></tr>';
-				re += '<tr><td colspan="2">' + make_Refresh_Button() + '</td></tr>';
-			}
+
+		} else if (UI.sync_state.localstorage && !TEST.disable_local){
+			re += '<tr><td>saved locally: &ensp;' + timeToEnglish(UI.sync_state.localstorage) + '</td>';
+			if(cloudstorageserverurl) re += '<td rowspan="2">' + make_Refresh_Button() + '</td></tr>';
+			else re += '</tr>';
+			if(cloudstorageserverurl) re += '<tr><td>waiting for internet to sync with the cloud</td></tr>';
+
 		} else {
-			re += '<tr><td>could not save</td></tr>';
+			re += '<tr><td>could not save</td>';
+			if(cloudstorageserverurl) re += '<td rowspan="2">' + make_Refresh_Button() + '</td></tr>';
+			else re += '</tr>';
 			re += '<tr><td>data will be lost when this tab is closed</td></tr>';
-			if(cloudstorageserverurl){
-				re += '<tr><td colspan="2">' + make_Refresh_Button() + '</td></tr>';
-			}
 		}
+
 		re += '</table>';
 		return re;
 	}
@@ -270,7 +267,7 @@
 		var bgcolor = UI.theme_mcolor.lighten(0.05).getString();
 		var txtcolor = UI.theme_mcolor.lighten(0.3).getString();
 		var re = '<button class="footerbutton" ';
-		re += 'style="background-color:'+bgcolor+'; color:'+txtcolor+';" ';
+		re += 'style="background-color:'+bgcolor+'; color:'+txtcolor+'; margin-left:20px;" ';
 		re += 'onclick="data_Sync();" ';
 		re += '>';
 		re += 'refresh';
@@ -373,7 +370,7 @@
 
 		if(typeof sl.items == 'undefined') { sl.items = []; }
 
-		var updates = {
+		var update = {
 			'list' : UI.current_list,
 			'itemadd' : item
 		};
@@ -383,7 +380,7 @@
 			$('#itemgrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.theme_mcolor, true));
 			$('#itemgrid .item:first span').css({color:'white'});
 			$('#itemgrid .item:first').css({backgroundColor: UI.theme_mcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animation_speed*1.2), refresh_List_HTML);
-			data_Push(updates);
+			data_Push(update);
 		} else {
 			data_Sync();
 		}
@@ -394,20 +391,20 @@
 	function list_RemoveItem(i){
 		var item = $(('#item'+i));
 
-		var updates = {
+		var update = {
 			'list' : UI.current_list,
 			'itemremove' : $.trim(inputSan(item.children('*:first').html(), false))
 		};
 
 		item.slideUp(UI.animation_speed*2, function(){
-			data_Push(updates);
+			data_Push(update);
 			refresh_List_HTML();
 			list_FlashFocusClearInput('list_RemoveItem');
 		});
 	}
 
 	function list_FlashFocusClearInput(calledby) {
-		log('list_FlashFocusClearInput \t calledby ' + (calledby || 'navigate'));
+		// log('list_FlashFocusClearInput \t calledby ' + (calledby || 'navigate'));
 		$('#itemnew').fadeTo(UI.animation_speed, 0.95).val('').fadeTo(UI.animation_speed, 1.0).focus();
 	}
 
@@ -423,7 +420,7 @@
 		}
 		re += '</div>';
 
-		// log('make_Item_HTML\t END');
+		// log('make_Item_HTML\t END\n');
 		return re;
 	}
 
@@ -434,7 +431,7 @@
 		if(UI.current_list){
 			return USER.list_data[UI.current_list];
 		} else {
-			log('get_SelectedList \t RETURNING FALSE');
+			log('get_SelectedList \t RETURNING FALSE\n');
 			return false;
 		}
 	}
@@ -456,22 +453,25 @@
 	// Data Functions: GET
 	// --------------------
 
-	function data_Sync(updates) {
+	function data_Sync() {
+		log('data_Sync \t START');
 		if(!cloudstorageserverurl || TEST.disable_cloud){
-			data_Got({});
+			log('\t Should have NO cloud connectivitiy, calling data_Got()');
+			data_Got();
 		} else {
+			log('\t Should have cloud connectivitiy, calling ax and pushing update to unsync');
 			ax(USER);
-			USER.unsync.push(updates);
-			localStorage_PushChange();
 		}
+		log('data_Sync \t END\n');
 	}
 
 	function data_Got(got_clouddata) {
 		// Set default  data
 		log('data_Got\t START');
 		var got_localdata = localStorage_getData();
-		log('\tCloud Storage and Local Storage:');
+		log('\tCloud Storage:');
 		log(got_clouddata);
+		log('\tLocal Storage:');
 		log(got_localdata);
 
 		if(got_clouddata && got_clouddata !== {}){
@@ -488,12 +488,6 @@
 
 			// LIST_NAMES
 			USER.list_names = list_names;
-			if(got_localdata.list_names){
-				$(got_localdata.list_names).each(function (l) {
-					var tn = got_localdata.list_names[l];
-					if(USER.list_names.indexOf(tn) > -1) USER.list_names.push(tn);
-				});
-			}
 
 			// LIST_DATA
 			$(USER.list_names).each(function (l){
@@ -514,7 +508,9 @@
 			if(uns){
 				// Recovering from a bad Cloud Sync Status, attempt to merge
 				for(var i=0; i<uns.length; i++){
-					data_Push(uns[i]);
+					if(uns[i]){
+						data_Apply_Update(uns[i]);
+					}
 				}
 			}
 			USER.unsync = [];
@@ -527,38 +523,45 @@
 			// If no Cloud Storage, fallback to Local Storage
 			log('\tBranch: Got Localdata (but not cloud data)');
 			USER = got_localdata;
-			log('\tCopied got_localdata to USER from GOT_LOCALDATA:');
-			// log(USER);
-			// log(got_localdata);
+			log('\tCopied got_localdata to USER:');
+			log(USER);
+			log('\tUnsync length = ' + USER.unsync.length);
+
+			// finish up
+			localStorage_PushChange();
 		} else {
 			// Nothing saved, default to empty lists
 			log('\tBranch: No Data');
 			setupDefaultLists();
-			data_Push();
+			UI.sync_state.cloudstorage = false;
+			UI.sync_state.localstorage = false;
 		}
-		refresh_ListPage_HTML();
-		refresh_HomePage_HTML();
 
-		log('data_Got\t END');
+		if (UI.current_list) refresh_ListPage_HTML();
+		else refresh_HomePage_HTML();
+
+		log('data_Got\t END\n');
 	}
 
 	function localStorage_getData(){
 		log('localStorage_getData:\t START');
 		if(TEST.disable_local) return false;
+		var ls = false;
 
 		try {
-			var ls = JSON.parse();
-			ls.sync_state.localstorage = now();
-			log('\treturning: ' + ls);
-			log('\tsync_state.localstorage: ' + ls.sync_state.localstorage);
-			log('localStorage_getData:\t END RETURNING LS');
-			return ls;
+			ls = window.localStorage.getItem('Listo_Data');
 		} catch (e) {
 			UI.sync_state.localstorage = false;
 			log('\tERROR CATCH localStorage: ' + window.localStorage);
-			log('localStorage_getData:\t END RETURNING FALSE');
+			log('localStorage_getData:\t END RETURNING FALSE\n');
 			return false;
 		}
+
+		UI.sync_state.localstorage = now();
+		log('\treturning:');
+		log(JSON.parse(ls));
+		log('localStorage_getData:\t END\n');
+		return JSON.parse(ls);
 	}
 
 
@@ -566,39 +569,51 @@
 	// Data Functions: PUSH
 	// --------------------
 
-	function data_Push(updates){
-		updates = updates || {};
-		list = USER.list_data[updates.list];
+	function data_Push(update){
+		log('data_Push \t START');
 
-		log("data_Push");
-		log("\t passed " + JSON.stringify(updates));
+		// Apply Changes
+		data_Apply_Update(update);
+		if(update) USER.unsync.push(update);
 
-		if(updates.itemadd){
-			list.items.push(updates.itemadd);
-			list.lastadd = now();
-			UI.sync_state.variable = now();
-		}
-
-		if(updates.itemremove){
-			var ai = list.items.indexOf(updates.itemremove);
-			if(ai > -1){
-				list.items.splice(ai, 1);
-				list.lastremove = now();
-				UI.sync_state.variable = now();
-			}
-		}
-
-		log('\t list is now ' + JSON.stringify(list));
-
-
-	//	=======================
-	//	SAVE DATA ELSWHERE
-	//	=======================
+		// Save Data
 		localStorage_PushChange();
-		data_Sync(updates);
+		data_Sync();
 
+		// Update UI
 		refresh_SyncStatus();
 		refresh_ListStatus_HTML();
+	}
+
+	function data_Apply_Update(update) {
+		log("data_Apply_Update \t START");
+		log("\t passed " + JSON.stringify(update));
+
+		update = update || {};
+
+		if(USER.list_names.indexOf(update.list) > -1){
+			list = USER.list_data[update.list];
+
+			if(update.itemadd){
+				list.items.push(update.itemadd);
+				list.lastadd = now();
+				UI.sync_state.variable = now();
+			}
+
+			if(update.itemremove){
+				var ai = list.items.indexOf(update.itemremove);
+				if(ai > -1){
+					list.items.splice(ai, 1);
+					list.lastremove = now();
+					UI.sync_state.variable = now();
+				}
+			}
+
+			log('\t ' + update.list + ' list is now ' + JSON.stringify(list));
+		} else {
+			log('\t ' + update.list + ' is not part of list_names');
+		}
+		log("data_Apply_Update \t END\n");
 	}
 
 	function localStorage_PushChange(){
@@ -608,10 +623,10 @@
 		log('localStorage_PushChange');
 		if(!TEST.disable_local){
 			try {
-				log('\t USER \n' + JSON.stringify(USER));
 				setresult = window.localStorage.setItem('Listo_Data', JSON.stringify(USER));
-				log('\t AFTER \n' + window.localStorage);
 				UI.sync_state.localstorage = now();
+				log('\t new LOCALSTORAGE');
+				log(JSON.parse(window.localStorage.getItem('Listo_Data')));
 			} catch (e) {
 				log('localStorage_PushChange: local storage not supported.');
 				log(setresult);
@@ -649,9 +664,9 @@
 		log(re);
 		log('***unsync is now');
 		log(USER.unsync);
-
+		log('\n');
 		UI.sync_state.cloudstorage = false;
-		data_Got({});
+		data_Got();
 		// setTimeout(function(){ ax(USER); }, 300000);
 	}
 
@@ -753,7 +768,7 @@
 	}
 
 	function dumpErrorInfo() {
-		log('dumpErrorInfo');
+		log('==================\ndumpErrorInfo\n==================');
 
 		var re = '<br><h3>Looks like something went wrong.  Oops</h3><textarea style="background-color:white; color:black; font-size:20px; font-family:monospace; width:80%; height:80%;">';
 
