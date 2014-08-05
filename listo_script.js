@@ -95,7 +95,7 @@
 		UI.homepage = $('#homepage');
 		UI.listpage = $('#listpage');
 		UI.theme_mcolor = new mColor(theme_colors[USER.theme_name]).setLightness(30);
-		UI.homepage.add('#listpage').css('background-color', UI.theme_mcolor.getString());
+		UI.homepage.add('#listpage').add('body').css('background-color', UI.theme_mcolor.getString());
 		UI.homepage.html('');
 		log('\tDefault Accent Color: ' + USER.theme_name);
 
@@ -113,7 +113,7 @@
 
 		if(list){
 			refresh_ListPage_HTML();
-			navTo(UI.listpage, list_FlashFocusClearInput);
+			navTo(UI.listpage, list_FocusInput);
 		} else {
 			refresh_HomePage_HTML();
 			navTo(UI.homepage);
@@ -179,8 +179,11 @@
 
 		con += '<div id="homefooter"></div>';
 
-		UI.homepage.html(con);
-		$('#syncstatus').css('color', UI.theme_mcolor.lighten(0.3).getString());
+		UI.homepage
+			.css({'opacity' : 0})
+			.html(con)
+			.animate({'opacity' : 1}, {'duration' : (UI.animation_speed*2), 'queue' : false});
+			
 		UI.homepage.focus();
 		refresh_HomePageFooter_HTML();
 	}
@@ -315,6 +318,8 @@
 			'backgroundColor' : UI.theme_mcolor.lighten(0.1).getString()
 		});
 
+		list_FocusInput();
+
 		log('refresh_ListPage_HTML \t END\n');
 	}
 
@@ -382,7 +387,7 @@
 			data_Sync(true);
 		}
 
-		list_FlashFocusClearInput('list_AddNewItem');
+		list_FocusInput(true);
 	}
 
 	function list_RemoveItem(i){
@@ -396,13 +401,15 @@
 		item.slideUp(UI.animation_speed*2, function(){
 			data_Push(update);
 			refresh_List_HTML();
-			list_FlashFocusClearInput('list_RemoveItem');
+			list_FocusInput();
 		});
 	}
 
-	function list_FlashFocusClearInput(calledby) {
-		// log('list_FlashFocusClearInput \t calledby ' + (calledby || 'navigate'));
-		$('#itemnew').fadeTo(UI.animation_speed, 0.95).val('').fadeTo(UI.animation_speed, 1.0).focus();
+	function list_FocusInput(clear) {
+		// log('list_FocusInput \t clear ' + clear);
+		var it = $('#itemnew');
+		it.focus();
+		if(clear) it.fadeTo(UI.animation_speed, 0.95).val('').fadeTo(UI.animation_speed, 1.0);
 	}
 
 	function make_Item_HTML(num, name, bgc, hideclose) {
