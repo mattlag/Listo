@@ -89,15 +89,12 @@
 	$(document).ready(function(){
 		log('>>>>>>>>>>>>>>>>>>>>>>\n\tREADY START\n>>>>>>>>>>>>>>>>>>>>>>');
 
-		$(window).on('error', dumpErrorInfo);
+		document.getElementById('homepage').innerHTML = '<div class="loading">loading...</div>';
+		window.onerror = dumpErrorInfo;
 
-		// Setup
+		// Setup UI stuff
 		UI.homepage = $('#homepage');
 		UI.listpage = $('#listpage');
-		UI.theme_mcolor = new mColor(theme_colors[USER.theme_name]).setLightness(30);
-		UI.homepage.add('#listpage').add('body').css('background-color', UI.theme_mcolor.getString());
-		UI.homepage.html('');
-		log('\tDefault Accent Color: ' + USER.theme_name);
 
 		// Setup Data
 		data_Sync(true);
@@ -149,6 +146,17 @@
 		);
 	}
 
+	function refresh() {
+		UI.theme_mcolor = new mColor(theme_colors[USER.theme_name]).setLightness(30);
+		UI.homepage.add('#listpage').add('body').css('background-color', UI.theme_mcolor.getString());
+
+		if(UI.current_list){
+			refresh_ListPage_HTML();
+		} else {
+			UI.homepage.css({'opacity' : 0});
+			refresh_HomePage_HTML();
+		}
+	}
 
 
 
@@ -180,10 +188,9 @@
 		con += '<div id="homefooter"></div>';
 
 		UI.homepage
-			.css({'opacity' : 0})
 			.html(con)
-			.animate({'opacity' : 1}, {'duration' : (UI.animation_speed*2), 'queue' : false});
-			
+			.animate({'opacity' : 1}, {'duration' : (UI.animation_speed*4), 'queue' : false});
+
 		UI.homepage.focus();
 		refresh_HomePageFooter_HTML();
 	}
@@ -236,7 +243,6 @@
 		} else {
 			USER.theme_name = newtheme;
 			data_Push();
-			location.reload();
 		}
 	}
 
@@ -539,8 +545,7 @@
 			UI.sync_local = false;
 		}
 
-		if (UI.current_list) refresh_ListPage_HTML();
-		else refresh_HomePage_HTML();
+		refresh();
 
 		log('data_Got\t END\n');
 	}
