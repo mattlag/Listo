@@ -57,7 +57,6 @@
 	*/
 	// Customized stuff the User adds
 	var USER = {
-		'list_names' : [],
 		'list_data' : {},
 		'theme_name' : 'blue',
 		'unsync' : []
@@ -65,7 +64,8 @@
 
 	// Stuff the UI needs
 	var UI = {
-		'sync_state' : {'variable':false, 'localstorage':false, 'cloudstorage':false},
+		'sync_cloud' : false,
+		'sync_local' : false,
 		'current_list' : false,
 		'theme_mcolor' : {},
 		'animation_speed' : 60,
@@ -94,19 +94,19 @@
 		// Setup
 		UI.homepage = $('#homepage');
 		UI.listpage = $('#listpage');
-		UI.theme_mcolor = new mColor(themecolors[USER.theme_name]).setLightness(30);
+		UI.theme_mcolor = new mColor(theme_colors[USER.theme_name]).setLightness(30);
 		UI.homepage.add('#listpage').css('background-color', UI.theme_mcolor.getString());
+		UI.homepage.html('');
 		log('\tDefault Accent Color: ' + USER.theme_name);
 
 		// Setup Data
-		setupDefaultLists();
-		data_Sync();
+		data_Sync(true);
 
 		log('>>>>>>>>>>>>>>>>>>>>>>\n\tREADY END\n>>>>>>>>>>>>>>>>>>>>>>\n');
 	});
 
 	function navigate(list){
-		log('||||||||||||||||||||||||||||\n\tnavigate START');
+		log('||||||||||||||||||||||||||||\nnavigate START');
 		log('\tto: ' + (list? list : 'homepage'));
 
 		UI.current_list = list;
@@ -119,11 +119,11 @@
 			navTo(UI.homepage);
 		}
 
-		log('\tnavigate END\n||||||||||||||||||||||||||||');
+		log('navigate END\n||||||||||||||||||||||||||||');
 	}
 
 	function navTo(target, complete) {
-		log('navTo ' + target.id);
+		// log('navTo ' + target.id);
 
 		var current = UI.listpage;
 		if(target === UI.listpage) current = UI.homepage;
@@ -138,7 +138,6 @@
 			{'left' : '-=100%'}, speed,
 			function() { current.scrollTop(0); }
 		);
-
 
 		target.animate(
 			{'left' : '-=100%'}, speed,
@@ -161,7 +160,7 @@
 		var con = '';
 		var incl = (((100 - UI.theme_mcolor.getLightness())*0.4) / (list_names.length + 1));
 
-		$(USER.list_names).each(function(l){
+		$(list_names).each(function(l){
 			var bg = UI.theme_mcolor.setLightness(((list_names.length + 1) - l) *incl + UI.theme_mcolor.getLightness());
 			var bgcolor = bg.getString();
 			var txcolor = bg.lighten(0.8).getString();
@@ -202,7 +201,7 @@
 		re += '<div id="themechoices">';
 
 		for(var c in theme_colors){
-			if(themecolors.hasOwnProperty(c)){
+			if(theme_colors.hasOwnProperty(c)){
 				if(c !== USER.theme_name){
 					re += make_ThemeChooser_Button(c);
 				}
@@ -214,7 +213,7 @@
 	}
 
 	function make_ThemeChooser_Button(name) {
-		var mc = new mColor(themecolors[name]).setLightness(30);
+		var mc = new mColor(theme_colors[name]).setLightness(30);
 		var bgcolor = mc.lighten(0.05).getString();
 		var txtcolor = mc.lighten(0.5).getString();
 		var re = '<button class="footerbutton" ';
@@ -241,11 +240,11 @@
 	function make_SyncStatus_HTML() {
 		var re = '<table>';
 
-		if(UI.sync_state.cloudstorage && !TEST.disable_cloud){
-			re += '<tr><td class="leftcol">saved:</td><td>' + timeToEnglish(UI.sync_state.cloudstorage) + '</td></tr>';
+		if(UI.sync_cloud && !TEST.disable_cloud){
+			re += '<tr><td class="leftcol">saved:</td><td>' + timeToEnglish(UI.sync_cloud) + '</td></tr>';
 
-		} else if (UI.sync_state.localstorage && !TEST.disable_local){
-			re += '<tr><td>saved locally: &ensp;' + timeToEnglish(UI.sync_state.localstorage) + '</td>';
+		} else if (UI.sync_local && !TEST.disable_local){
+			re += '<tr><td>saved locally: &ensp;' + timeToEnglish(UI.sync_local) + '</td>';
 			if(cloud_storage_server_url) re += '<td rowspan="2">' + make_Refresh_Button() + '</td></tr>';
 			else re += '</tr>';
 			if(cloud_storage_server_url) re += '<tr><td>waiting for internet to sync with the cloud</td></tr>';
@@ -380,7 +379,7 @@
 			$('#itemgrid .item:first').css({backgroundColor: UI.theme_mcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animation_speed*1.2), refresh_List_HTML);
 			data_Push(update);
 		} else {
-			data_Sync();
+			data_Sync(true);
 		}
 
 		list_FlashFocusClearInput('list_AddNewItem');
@@ -451,14 +450,14 @@
 	// Data Functions: GET
 	// --------------------
 
-	function data_Sync() {
+	function data_Sync(onlyget) {
 		log('data_Sync \t START');
 		if(!cloud_storage_server_url || TEST.disable_cloud){
 			log('\t Should have NO cloud connectivitiy, calling data_Got()');
 			data_Got();
 		} else {
 			log('\t Should have cloud connectivitiy, calling ax and pushing update to unsync');
-			ax(USER);
+			ax(onlyget);
 		}
 		log('data_Sync \t END\n');
 	}
@@ -478,18 +477,14 @@
 
 			// --------------------------
 			// Merge all USER properties
-			// 'list_names' : [],
 			// 'list_data' : {},
 			// 'theme_name' : 'blue',
 			// 'unsync' : []
 			//---------------------------
 
-			// LIST_NAMES
-			USER.list_names = list_names;
-
 			// LIST_DATA
-			$(USER.list_names).each(function (l){
-				var tn = USER.list_names[l];
+			$(list_names).each(function (l){
+				var tn = list_names[l];
 				var tcd = got_clouddata.list_data[tn] || {'items':[], 'lastremove':false, 'lastadd':false};
 				log('\t cloud data for list ' + tn + ' is ' + JSON.stringify(tcd));
 
@@ -502,12 +497,14 @@
 			}
 
 			// UNSYNC
-			var uns = got_localdata.unsync;
-			if(uns){
+			var uu = USER.unsync;
+			var cu = got_clouddata.unsync;
+
+			if(uu && uu !== cu){
 				// Recovering from a bad Cloud Sync Status, attempt to merge
-				for(var i=0; i<uns.length; i++){
-					if(uns[i]){
-						data_Apply_Update(uns[i]);
+				for(var i=0; i<uu.length; i++){
+					if(cu.indexOf(uu[i]) < 0){
+						data_Apply_Update(uu[i]);
 					}
 				}
 			}
@@ -531,8 +528,8 @@
 			// Nothing saved, default to empty lists
 			log('\tBranch: No Data');
 			setupDefaultLists();
-			UI.sync_state.cloudstorage = false;
-			UI.sync_state.localstorage = false;
+			UI.sync_cloud = false;
+			UI.sync_local = false;
 		}
 
 		if (UI.current_list) refresh_ListPage_HTML();
@@ -549,13 +546,13 @@
 		try {
 			ls = window.localStorage.getItem('Listo_Data');
 		} catch (e) {
-			UI.sync_state.localstorage = false;
+			UI.sync_local = false;
 			log('\tERROR CATCH localStorage: ' + window.localStorage);
 			log('localStorage_getData:\t END RETURNING FALSE\n');
 			return false;
 		}
 
-		UI.sync_state.localstorage = now();
+		UI.sync_local = now();
 		log('\treturning:');
 		log(JSON.parse(ls));
 		log('localStorage_getData:\t END\n');
@@ -587,15 +584,13 @@
 		log("data_Apply_Update \t START");
 		log("\t passed " + JSON.stringify(update));
 
-		update = update || {};
+		update = update || false;
+		list = USER.list_data[update.list];
 
-		if(USER.list_names.indexOf(update.list) > -1){
-			list = USER.list_data[update.list];
-
+		if(update && list){
 			if(update.itemadd){
 				list.items.push(update.itemadd);
 				list.lastadd = now();
-				UI.sync_state.variable = now();
 			}
 
 			if(update.itemremove){
@@ -603,26 +598,24 @@
 				if(ai > -1){
 					list.items.splice(ai, 1);
 					list.lastremove = now();
-					UI.sync_state.variable = now();
 				}
 			}
 
 			log('\t ' + update.list + ' list is now ' + JSON.stringify(list));
-		} else {
-			log('\t ' + update.list + ' is not part of list_names');
 		}
+
 		log("data_Apply_Update \t END\n");
 	}
 
 	function localStorage_PushChange(){
-		UI.sync_state.localstorage = false;
+		UI.sync_local = false;
 		var setresult = 'initial';
 
 		log('localStorage_PushChange');
 		if(!TEST.disable_local){
 			try {
 				setresult = window.localStorage.setItem('Listo_Data', JSON.stringify(USER));
-				UI.sync_state.localstorage = now();
+				UI.sync_local = now();
 				log('\t new LOCALSTORAGE');
 				log(JSON.parse(window.localStorage.getItem('Listo_Data')));
 			} catch (e) {
@@ -633,12 +626,16 @@
 	}
 
 
-	function ax(pdata) {
-		UI.sync_state.cloudstorage = 'pending';
+	function ax(onlyget) {
+		log('ax');
+
+		var pdata = onlyget? false : {'USER' : JSON.stringify(USER)};		
+		UI.sync_cloud = 'pending';
+
 		$.ajax({
-			type: 'POST',
-			url:  cloud_storage_server_url,
-			data: {'USER' : JSON.stringify(pdata)}
+			'type': 'POST',
+			'url':  cloud_storage_server_url,
+			'data': pdata
 		})
 		.done(function(redata) {
 			log("ax: DONE - returned:");
@@ -646,6 +643,7 @@
 			try {
 				redata = JSON.parse(redata);
 				USER.unsync = [];	// should be per ajax call
+				UI.sync_cloud = now();
 				data_Got(redata);
 			} catch (e){
 				ax_fail(redata);
@@ -658,12 +656,12 @@
 	}
 
 	function ax_fail(re) {
-		log('***failure message');
+		log('*** failure message');
 		log(re);
-		log('***unsync is now');
+		log('*** unsync is now');
 		log(USER.unsync);
 		log('\n');
-		UI.sync_state.cloudstorage = false;
+		UI.sync_cloud = false;
 		data_Got();
 		// setTimeout(function(){ ax(USER); }, 300000);
 	}
@@ -735,8 +733,9 @@
 	}
 
 	function setupDefaultLists(){
-		USER.list_names = list_names;
-		$(list_names).each(function(l){ USER.list_data[list_names[l]] = {'items':[], 'lastremove':false, 'lastadd':false}; });
+		$(list_names).each(function(l){ 
+			USER.list_data[list_names[l]] = {'items':[], 'lastremove':false, 'lastadd':false};
+		});
 	}
 
 
