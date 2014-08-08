@@ -37,8 +37,8 @@
 	Cloud Storage Server URL
 	Listo! works fine using local HTML5 storage, but if you
 	hook it up to a server, it can persist changes in the
-	cloud.  This requires a .php backend that saves and 
-	serves up values via POST. If you want to do that, 
+	cloud.  This requires a .php backend that saves and
+	serves up values via POST. If you want to do that,
 	specify the URL of the server page here.
 	There is an example sync.php file in this project.
 	--------------------------------------------------------
@@ -110,7 +110,7 @@
 
 		if(list){
 			refresh_ListPage_HTML();
-			navTo(UI.listpage, list_FocusInput);
+			navTo(UI.listpage);
 		} else {
 			refresh_HomePage_HTML();
 			navTo(UI.homepage);
@@ -127,17 +127,20 @@
 		var both = $('#homepage').add('#listpage');
 		var speed = UI.animation_speed*2;
 
-		both.css({'overflow' : 'hidden'});
-		target.css({'left' : '100%'});
-		current.css({'left' : '0%'});
+		both.css({'overflow':'hidden'});
+		target.css({'left':'100%', 'display':'block'});
+		current.css({'left':'0%'});
 
 		current.animate(
-			{'left' : '-=100%'}, speed,
-			function() { current.scrollTop(0); }
+			{'left' : '-100%'}, speed,
+			function() {
+				current.scrollTop(0);
+				current.css({'display':'none'});
+			}
 		);
 
 		target.animate(
-			{'left' : '-=100%'}, speed,
+			{'left' : '0%'}, speed,
 			function(){
 				both.css({'overflow-y' : 'auto'});
 				target.scrollTop(0);
@@ -147,15 +150,18 @@
 	}
 
 	function refresh() {
+		log('\nrefresh \t START');
 		UI.theme_mcolor = new mColor(theme_colors[USER.theme_name]).setLightness(30);
-		UI.homepage.add('#listpage').add('body').css('background-color', UI.theme_mcolor.getString());
+		$('html, body, #homepage, #listpage').css({'background-color':UI.theme_mcolor.getString(), 'width':'100%'});
 
 		if(UI.current_list){
-			refresh_ListPage_HTML();
+			log('\titemnew focus ' + $('#itemnew').is(':focus'));
+			refresh_ListPage_HTML($('#itemnew').is(':focus'));
 		} else {
 			UI.homepage.css({'opacity' : 0});
 			refresh_HomePage_HTML();
 		}
+		log('refresh \t END');
 	}
 
 
@@ -297,7 +303,7 @@
 	// LIST Functions
 	// ----------------------------------------
 
-	function refresh_ListPage_HTML(){
+	function refresh_ListPage_HTML(itemnewfocus){
 		log('\nrefresh_ListPage_HTML \t START');
 
 		var con = "<input type='text' id='itemnew'>";
@@ -324,7 +330,7 @@
 			'backgroundColor' : UI.theme_mcolor.lighten(0.1).getString()
 		});
 
-		list_FocusInput();
+		if(itemnewfocus) list_FocusInput();
 
 		log('refresh_ListPage_HTML \t END\n');
 	}
@@ -353,7 +359,7 @@
 
 	function refresh_ListPageFooter_HTML() {
 		var con = "<button id='homebutton' onclick='navigate(false);'>home &ensp; &#x276F;</button>";
-		con += '<h1>' + UI.current_list.replace(/_/gi, ' ') + '</h1>';
+		con += '<h1 onclick="list_FocusInput();">' + UI.current_list.replace(/_/gi, ' ') + '</h1>';
 		con += "<div id='liststatus'></div>";
 
 		if(TEST.show_dev_buttons) con += TEST_make_Debug_Buttons();
@@ -371,7 +377,7 @@
 	}
 
 	function list_AddNewItem(item){
-		item = inputSan($.trim(item), true);
+		item = $.trim(item);
 		// log("\nADDNEWITEM - " + item);
 
 		var sl = get_SelectedList();
@@ -389,11 +395,10 @@
 			$('#itemgrid .item:first span').css({color:'white'});
 			$('#itemgrid .item:first').css({backgroundColor: UI.theme_mcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animation_speed*1.2), refresh_List_HTML);
 			data_Push(update);
+			list_FocusInput(true);
 		} else {
 			data_Sync(true);
 		}
-
-		list_FocusInput(true);
 	}
 
 	function list_RemoveItem(i){
@@ -401,18 +406,17 @@
 
 		var update = {
 			'list' : UI.current_list,
-			'itemremove' : $.trim(inputSan(item.children('*:first').html(), false))
+			'itemremove' : $.trim(item.children('*:first').html(), false)
 		};
 
 		item.slideUp(UI.animation_speed*2, function(){
 			data_Push(update);
 			refresh_List_HTML();
-			list_FocusInput();
 		});
 	}
 
 	function list_FocusInput(clear) {
-		// log('list_FocusInput \t clear ' + clear);
+		// log \t clear ' + clear);
 		var it = $('#itemnew');
 		it.focus();
 		if(clear) it.fadeTo(UI.animation_speed, 0.95).val('').fadeTo(UI.animation_speed, 1.0);
@@ -641,7 +645,7 @@
 	function ax(onlyget) {
 		log('ax');
 
-		var pdata = onlyget? false : {'USER' : JSON.stringify(USER)};		
+		var pdata = onlyget? false : {'USER' : JSON.stringify(USER)};
 		UI.sync_cloud = 'pending';
 
 		$.ajax({
@@ -726,26 +730,8 @@
 		return 'a zillion years ago';
 	}
 
-	function inputSan(t, removeamp){
-		if(removeamp) t = t.replace("&", '&amp;');
-		t = t.replace("(",	'&#40;');
-		t = t.replace(")",	'&#41;');
-		t = t.replace("[",	'&#91;');
-		t = t.replace("]",	'&#93;');
-		t = t.replace("\\",	'&#47;');
-		t = t.replace(">",  '&gt;');
-		t = t.replace("<",  '&lt;');
-		t = t.replace('"',  '&quot;');
-		t = t.replace('“',  '&quot;');
-		t = t.replace('”',  '&quot;');
-		t = t.replace("'",  '&apos;');
-		t = t.replace("‘",  '&apos;');
-		t = t.replace("’",  '&apos;');
-		return t;
-	}
-
 	function setupDefaultLists(){
-		$(list_names).each(function(l){ 
+		$(list_names).each(function(l){
 			USER.list_data[list_names[l]] = {'items':[], 'lastremove':false, 'lastadd':false};
 		});
 	}
@@ -772,8 +758,13 @@
 	}
 
 	function log(x) {
-		TEST.console_entries.push(x);
-		if(TEST.console_log) console.log(x);
+		if(!TEST.console_log) return;
+		try {
+			TEST.console_entries.push(x);
+			if(TEST.console_log) console.log(x);
+		} catch(e){
+			TEST.console_log = false;
+		}
 	}
 
 	function dumpErrorInfo() {

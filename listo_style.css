@@ -9,8 +9,6 @@ body {
 	overflow: hidden;
 	width: 100%;
 	height: 100%;
-	width: 100vw;
-	width: 100vh;
 }
 
 h1 {
@@ -50,23 +48,17 @@ button:visited {
 
 	/* Fancy */
 	font-size: 4vh;
-	width: 100vw;
-	height: 100vh;
 }
 
 #homepage {
-	left: 0vw;
+	left: 0%;
 	z-index: 100;
 }
 
 #listpage {
-	left: 100vw;
+	left: 100%;
+	display: none;
 	z-index: 200;
-}
-
-#settingspage {
-	left: 200vw;
-	z-index: 300;
 }
 
 #itemgrid {
