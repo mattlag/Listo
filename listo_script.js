@@ -77,8 +77,8 @@
 	var TEST = {
 		'disable_local' : false,
 		'disable_cloud' : false,
-		'console_log' : true,
-		'show_dev_buttons' : true,
+		'console_log' : false,
+		'show_dev_buttons' : false,
 		'console_entries' : []
 	};
 
