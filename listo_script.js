@@ -43,9 +43,9 @@
 	There is an example sync.php file in this project.
 	--------------------------------------------------------
 	*/
-	// var cloud_storage_server_url = false;
+	var cloud_storage_server_url = false;
 	// var cloud_storage_server_url = 'http://www.yourdomain.com/listo/sync.php';
-	var cloud_storage_server_url = 'sync.php';
+	// var cloud_storage_server_url = 'sync.php';
 
 
 

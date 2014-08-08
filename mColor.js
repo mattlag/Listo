@@ -12,7 +12,7 @@
 
 function mColor(mc){
 	// console.log('\nmColor: was passed : ' + JSON.stringify(mc));
-	
+
 	var r = 64;
 	var g = 64;
 	var b = 64;

@@ -1,5 +1,4 @@
 <?php
-
 	$file = "listo_save_data.txt";
 
 	if(!file_exists($file)){
@@ -15,5 +14,4 @@
 	}
 
 	include $file;
-
 ?>
