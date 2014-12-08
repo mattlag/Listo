@@ -94,13 +94,13 @@ button:visited {
 
 .list {
 	width: 100%;
-	padding: 2vh 0vh 2vh 2vh;
+	padding: 1vh 0vh 2vh 2vh;
 	color: white;
 }
 
 .listname {
 	font-size: 12vh;
-	margin-right: 4vh;
+	margin-right: 3vh;
 }
 
 .list:hover .listname,

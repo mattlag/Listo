@@ -180,7 +180,7 @@
 			var txcolor = bg.lighten(0.8).getString();
 			var countbgcolor = bg.lighten(0.15).getString();
 			var lname = list_names[l];
-			var listnum = USER.list_data[lname].items.length;
+			var listnum = getLength(USER.list_data[lname].items);
 
 			con += '<div class="list" ';
 			con += 'tabindex="'+(l+2)+'" ';
@@ -199,6 +199,12 @@
 
 		UI.homepage.focus();
 		refresh_HomePageFooter_HTML();
+	}
+
+	function getLength(obj) {
+		var count = 0;
+		for(var key in obj){if(obj.hasOwnProperty(key)){count++;}}
+		return count;
 	}
 
 	function refresh_HomePageFooter_HTML() {
@@ -342,11 +348,14 @@
 		log('\tSelected List Items: ' + JSON.stringify(sl.items));
 		// List Items
 		var con = '';
-		var incl = (((100 - UI.theme_mcolor.getLightness())*0.4) / (sl.items.length + 1));
+		var numitems = getLength(sl.items);
+		var incl = (((100 - UI.theme_mcolor.getLightness())*0.4) / (numitems + 1));
 
-		if(sl.items.length){
-			$(sl.items).each(function(i) {
-				con = (make_Item_HTML(i, sl.items[i], UI.theme_mcolor.setLightness(((i+1)*incl + UI.theme_mcolor.getLightness()))) + con);
+		if(numitems){
+			var c=1;
+			$.each(sl.items, function(key, value) {
+				con = (make_Item_HTML(key, value, UI.theme_mcolor.setLightness(((c*incl) + UI.theme_mcolor.getLightness()))) + con);
+				c++;
 			});
 		} else {
 			con += '<div class="item" id="emptyinhere" style="color:'+UI.theme_mcolor.lighten(0.2).getString()+';">';
@@ -382,7 +391,7 @@
 
 		var sl = get_SelectedList();
 
-		if(typeof sl.items == 'undefined') { sl.items = []; }
+		if(typeof sl.items == 'undefined') { sl.items = {}; }
 
 		var update = {
 			'list' : UI.current_list,
@@ -390,8 +399,9 @@
 		};
 
 		if(item !== ''){
+			var id = getNewID(sl);
 			$('#emptyinhere').animate({'opacity' : 0}, (UI.animation_speed/4));
-			$('#itemgrid').prepend(make_Item_HTML(sl.items.length-1, item, UI.theme_mcolor, true));
+			$('#itemgrid').prepend(make_Item_HTML(id, item, UI.theme_mcolor, true));
 			$('#itemgrid .item:first span').css({color:'white'});
 			$('#itemgrid .item:first').css({backgroundColor: UI.theme_mcolor.lighten(0.4).getString()}).toggle().slideDown((UI.animation_speed*1.2), refresh_List_HTML);
 			data_Push(update);
@@ -402,35 +412,36 @@
 	}
 
 	function list_RemoveItem(i){
-		var item = $(('#item'+i));
+		log('list_RemoveItem: i = ' + i);
 
 		var update = {
 			'list' : UI.current_list,
-			'itemremove' : $.trim(item.children('*:first').html(), false)
+			'itemremove' : i
 		};
+		log('\t update = ' + JSON.stringify(update));
 
-		item.slideUp(UI.animation_speed*2, function(){
+		$('#'+i).slideUp(UI.animation_speed*2, function(){
 			data_Push(update);
 			refresh_List_HTML();
 		});
 	}
 
 	function list_FocusInput(clear) {
-		// log \t clear ' + clear);
+		log('list_FocusInput: clear ' + clear);
 		var it = $('#itemnew');
 		it.focus();
 		if(clear) it.fadeTo(UI.animation_speed, 0.95).val('').fadeTo(UI.animation_speed, 1.0);
 	}
 
-	function make_Item_HTML(num, name, bgc, hideclose) {
-		// log('make_Item_HTML: name = ' + name);
+	function make_Item_HTML(id, name, bgc, hideclose) {
+		log('make_Item_HTML: id:'+id+' name:'+name+' bgc:'+bgc);
 		var txtitem = bgc.lighten(0.8).getString();
 		var bgitem = bgc.getString();
 		var bgclose = bgc.lighten(0.1).getString();
-		var re = '<div id="item'+num+'" class="item" style="background-color:'+bgitem+';">';
+		var re = '<div id="'+id+'" class="item" style="background-color:'+bgitem+';">';
 		re += '<span class="itemname" style="color:'+txtitem+';">' + name + '</span>';
 		if(!hideclose){
-			re += '<button class="itemremove" onclick="list_RemoveItem('+num+');" style="color:'+bgclose+';">&#10006;</button>';
+			re += '<button class="itemremove" onclick="list_RemoveItem(\''+id+'\');" style="color:'+bgclose+';">&#10006;</button>';
 		}
 		re += '</div>';
 
@@ -502,7 +513,7 @@
 			// LIST_DATA
 			$(list_names).each(function (l){
 				var tn = list_names[l];
-				var tcd = got_clouddata.list_data[tn] || {'items':[], 'lastremove':false, 'lastadd':false};
+				var tcd = got_clouddata.list_data[tn] || {'items':{'id0':'sample'}, 'lastremove':false, 'lastadd':false};
 				log('\t cloud data for list ' + tn + ' is ' + JSON.stringify(tcd));
 
 				USER.list_data[tn] = tcd;
@@ -584,7 +595,7 @@
 		log('data_Push \t START');
 
 		// Apply Changes
-		data_Apply_Update(update);
+		var result = data_Apply_Update(update);
 		if(update) USER.unsync.push(update);
 
 		// Save Data
@@ -594,6 +605,8 @@
 		// Update UI
 		refresh_SyncStatus();
 		refresh_ListStatus_HTML();
+
+		return result;
 	}
 
 	function data_Apply_Update(update) {
@@ -602,25 +615,33 @@
 
 		update = update || false;
 		list = USER.list_data[update.list];
+		var nid = false;
 
 		if(update && list){
 			if(update.itemadd){
-				list.items.push(update.itemadd);
+				nid = getNewID(list.items);
+				log('\t ADD: new id is ' + nid);
+				list.items[nid] = update.itemadd;
 				list.lastadd = now();
+				log('\t ADD: ' + update.list + ' list is now ' + JSON.stringify(list));
 			}
 
 			if(update.itemremove){
-				var ai = list.items.indexOf(update.itemremove);
-				if(ai > -1){
-					list.items.splice(ai, 1);
-					list.lastremove = now();
-				}
+				delete list.items[update.itemremove];
+				list.lastremove = now();
+				log('\t REMOVE: ' + update.list + ' list is now ' + JSON.stringify(list));
 			}
 
-			log('\t ' + update.list + ' list is now ' + JSON.stringify(list));
 		}
 
 		log("data_Apply_Update \t END\n");
+		return nid;
+	}
+
+	function getNewID(obj) {
+		var n = 0;
+		while(obj[('id'+n)]) n++;
+		return ('id'+n);		
 	}
 
 	function localStorage_PushChange(){
@@ -732,7 +753,7 @@
 
 	function setupDefaultLists(){
 		$(list_names).each(function(l){
-			USER.list_data[list_names[l]] = {'items':[], 'lastremove':false, 'lastadd':false};
+			USER.list_data[list_names[l]] = {'items':{}, 'lastremove':false, 'lastadd':false};
 		});
 	}
 
