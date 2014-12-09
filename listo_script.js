@@ -91,6 +91,7 @@
 
 		document.getElementById('homepage').innerHTML = '<div class="loading">loading...</div>';
 		window.onerror = dumpErrorInfo;
+		window.onbeforeunload = navigate;
 
 		// Setup UI stuff
 		UI.homepage = $('#homepage');
