@@ -91,7 +91,6 @@
 
 		document.getElementById('homepage').innerHTML = '<div class="loading">loading...</div>';
 		window.onerror = dumpErrorInfo;
-		window.onbeforeunload = navigate;
 
 		// Setup UI stuff
 		UI.homepage = $('#homepage');
@@ -346,7 +345,8 @@
 		log("\nrefresh_List_HTML \t START");
 		var sl = get_SelectedList();
 
-		log('\tSelected List Items: ' + JSON.stringify(sl.items));
+		if(sl) log('\tSelected List Items: ' + JSON.stringify(sl.items));
+		
 		// List Items
 		var con = '';
 		var numitems = getLength(sl.items);
